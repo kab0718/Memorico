@@ -33,11 +33,7 @@ export async function extractBasicExif(file: File): Promise<BasicExif> {
   }
   try {
     // Parse only needed fields (date)
-    tags = await exifr.parse(file as Blob, [
-      "DateTimeOriginal",
-      "CreateDate",
-      "ModifyDate",
-    ]);
+    tags = await exifr.parse(file as Blob, ["DateTimeOriginal", "CreateDate", "ModifyDate"]);
   } catch {
     tags = undefined;
   }
