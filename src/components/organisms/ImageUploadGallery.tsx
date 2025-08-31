@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, Group, Image, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Button, Card, Group, Image, SimpleGrid, Stack, Text, TextInput } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { UploadDropzone } from "../molecules/UploadDropzone";
 import { extractBasicExif, formatDateTime, BasicExif } from "../../utils/exif";
@@ -10,15 +10,19 @@ interface Props {
   onChange?: (files: File[]) => void;
 }
 
+interface MediaExif {
+  status: "pending" | "ok" | "error";
+  exif?: BasicExif;
+}
+
 export function ImageUploadGallery({
   accept = ["image/*"],
   maxSize = 50 * 1024 * 1024,
   onChange,
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
-  const [exifMap, setExifMap] = useState<
-    Record<string, { status: "pending" | "ok" | "error"; exif?: BasicExif }>
-  >({});
+  const [exifMap, setExifMap] = useState<Record<string, MediaExif>>({});
+  const [placeMap, setPlaceMap] = useState<Record<string, string>>({});
 
   const fileKey = (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`;
 
@@ -59,11 +63,16 @@ export function ImageUploadGallery({
       const { [key]: _removed, ...rest } = prev;
       return rest;
     });
+    setPlaceMap((prev) => {
+      const { [key]: _p, ...rest } = prev;
+      return rest;
+    });
   };
 
   const clearAll = () => {
     setFiles([]);
     setExifMap({});
+    setPlaceMap({});
     onChange?.([]);
   };
 
@@ -90,33 +99,18 @@ export function ImageUploadGallery({
       files.map((file, idx) => {
         const url = URL.createObjectURL(file);
         const key = fileKey(file);
-        const exifState = exifMap[key];
-        const exif = exifState?.exif;
+
         return (
           <Card key={`${file.name}-${idx}`} withBorder padding="xs">
             <Group h={340}>
               <Image src={url} alt={file.name} fit="cover" radius="sm" />
             </Group>
             <div>
-              {exifState?.status === "pending" && (
-                <Text size="xs" c="dimmed" mt={4}>
-                  EXIF解析中…
-                </Text>
-              )}
-              {exifState?.status === "ok" && exif && (
-                <>
-                  <Text size="sm" mt={10}>
-                    撮影日時: {formatDateTime(exif.date) || "不明"}
-                    <br />
-                    位置: {formatLatLng(exif.latitude, exif.longitude) || "不明"}
-                  </Text>
-                </>
-              )}
-              {exifState?.status === "error" && (
-                <Text size="xs" c="red" mt={4}>
-                  EXIF解析失敗
-                </Text>
-              )}
+              <ExifData
+                mediaExif={exifMap[key]}
+                placeName={placeMap[key] ?? ""}
+                onPlaceNameChange={(v) => setPlaceMap((prev) => ({ ...prev, [key]: v }))}
+              />
               <Group justify="flex-end" mt={6}>
                 <Button
                   justify="flex-end"
@@ -132,7 +126,7 @@ export function ImageUploadGallery({
           </Card>
         );
       }),
-    [files, exifMap],
+    [files, exifMap, placeMap],
   );
 
   return (
@@ -153,7 +147,50 @@ export function ImageUploadGallery({
   );
 }
 
-function formatLatLng(lat?: number, lng?: number) {
-  if (lat == null || lng == null) return undefined;
-  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+interface ExifDataProps {
+  mediaExif: MediaExif | undefined;
+  placeName: string;
+  onPlaceNameChange: (value: string) => void;
 }
+
+const ExifData = ({ mediaExif, placeName, onPlaceNameChange }: ExifDataProps) => {
+  const status = mediaExif?.status;
+  const exif = mediaExif?.exif;
+
+  if (status !== "ok") {
+    const message = status === "pending" ? "EXIF解析中…" : "EXIF解析失敗";
+    return (
+      <Text size="xs" c="dimmed" mt={4}>
+        {message}
+      </Text>
+    );
+  }
+
+  if (!exif) {
+    return (
+      <Stack gap={4} mt={10}>
+        <Text size="sm">撮影日時: 不明</Text>
+        <TextInput
+          label="場所名（編集可）"
+          placeholder="例: 東京駅 丸の内口"
+          size="xs"
+          value={placeName}
+          onChange={(e) => onPlaceNameChange(e.currentTarget.value)}
+        />
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack gap={4} mt={10}>
+      <Text size="sm">撮影日時: {formatDateTime(exif.date) || "不明"}</Text>
+      <TextInput
+        label="場所名（編集可）"
+        placeholder="例: 東京駅 丸の内口"
+        size="xs"
+        value={placeName}
+        onChange={(e) => onPlaceNameChange(e.currentTarget.value)}
+      />
+    </Stack>
+  );
+};
