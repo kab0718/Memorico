@@ -1,12 +1,12 @@
 # TravelGuide (MVP scaffold)
 
-フロントエンドのみ（Vite + React のSPA）で構成されています。バックエンド実装は未決定のため含めていません。
+フロントエンドのみ（Vite + React のSPA）で構成。UIは Mantine v7、スタイルは Emotion を併用。バックエンドは未決定（TBD）。
 
 ## ワークスペース
 
 ```
 .
-├─ src/       # React + TS
+├─ src/       # React + TS（Mantine + Emotion）
 ├─ docs/
 │  └─ sow.md
 ├─ index.html
@@ -28,6 +28,13 @@ npm i
 
 http://localhost:5173 にアクセス。
 
+## 技術スタック（現状）
+
+- フレームワーク: Vite + React + TypeScript
+- UIコンポーネント: Mantine v7（`@mantine/core`, `@mantine/hooks`, `@mantine/notifications`, `@mantine/dropzone`）
+- スタイリング: Emotion（css prop, styled, Global/Theme は必要時に適用）
+- コード品質: ESLint + Prettier（統合済み）
+
 ## コード整形（Prettier）
 
 - 実行: `npm run format`（全ファイルを書き換え）
@@ -38,6 +45,8 @@ http://localhost:5173 にアクセス。
 - 実行: `npm run lint`（エラーは0件になるまで修正）
 - 自動修正: `npm run lint:fix`
 - ルール: TypeScript/React/React Hooksを有効化、`eslint-config-prettier`で競合を無効化
+
+補足: Emotionの`css` propを許可するため、ESLintの`react/no-unknown-property`で`css`をignore設定済みです。
 
 ## 次のステップ
 
