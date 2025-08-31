@@ -1,8 +1,9 @@
+import { css } from '@emotion/react'
 import React from 'react'
 
 export function App() {
   return (
-    <div style={{ padding: 24, fontFamily: 'ui-sans-serif, system-ui' }}>
+    <div css={style}>
       <h1>TravelGuide</h1>
       <p>しおり生成アプリ（MVPスキャフォールド）</p>
       <ul>
@@ -16,3 +17,7 @@ export function App() {
   )
 }
 
+const style = css`
+  padding: 24,
+  fontFamily: 'ui-sans-serif, system-ui' 
+`
