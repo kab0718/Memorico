@@ -1,22 +1,20 @@
 import { Title, List } from "@mantine/core";
 import { css } from "@emotion/react";
 import { ImageUploadGallery } from "./components/organisms/ImageUploadGallery";
+import { TripForm, type TripFormValues } from "./components/organisms/TripForm";
 
 export function App() {
   return (
     <div css={style}>
       <Title order={1}>TravelGuide</Title>
-      <p>しおり生成アプリ（MVPスキャフォールド）</p>
 
-      <ImageUploadGallery />
+      <div css={formContainerStyle}>
+        <ImageUploadGallery />
+        <TripForm onSubmit={(values: TripFormValues) => {
+          console.log("TripForm submit", values)
+        }} />
+      </div>
 
-      <List spacing="xs" withPadding mt="lg">
-        <List.Item>画像/動画アップロード</List.Item>
-        <List.Item>EXIF抽出・確認</List.Item>
-        <List.Item>入力フォーム（メンバー/宿泊/エピソード）</List.Item>
-        <List.Item>生成ジョブ実行と進捗</List.Item>
-        <List.Item>PDFダウンロード</List.Item>
-      </List>
     </div>
   );
 }
@@ -24,3 +22,9 @@ export function App() {
 const style = css`
   padding: 24px;
 `;
+
+const formContainerStyle = css`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`

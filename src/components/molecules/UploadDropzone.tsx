@@ -1,4 +1,3 @@
-import React from "react";
 import { Group, Stack, Text } from "@mantine/core";
 import { Dropzone, FileRejection } from "@mantine/dropzone";
 import { notifications } from "@mantine/notifications";

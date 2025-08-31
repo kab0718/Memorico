@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Button, Card, Group, Image, SimpleGrid, Stack, Text } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
-import { UploadDropzone } from '../molecules/UploadDropzone'
-import { extractBasicExif, formatDateTime, BasicExif } from '../../utils/exif'
+import { useEffect, useMemo, useState } from "react"
+import { Button, Card, Group, Image, SimpleGrid, Stack, Text } from "@mantine/core"
+import { notifications } from "@mantine/notifications"
+import { UploadDropzone } from "../molecules/UploadDropzone"
+import { extractBasicExif, formatDateTime, BasicExif } from "../../utils/exif"
 
 interface Props {
   accept?: string[]
@@ -11,20 +11,20 @@ interface Props {
 }
 
 export function ImageUploadGallery({
-  accept = ['image/*'],
+  accept = ["image/*"],
   maxSize = 50 * 1024 * 1024,
   onChange,
 }: Props) {
   const [files, setFiles] = useState<File[]>([])
   const [exifMap, setExifMap] = useState<
-    Record<string, { status: 'pending' | 'ok' | 'error'; exif?: BasicExif }>
+    Record<string, { status: "pending" | "ok" | "error"; exif?: BasicExif }>
   >({})
 
   const fileKey = (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`
 
   const handleAdd = (added: File[]) => {
     if (!added?.length) return
-    const onlyImages = added.filter((f) => f.type.startsWith('image/'))
+    const onlyImages = added.filter((f) => f.type.startsWith("image/"))
     const existing = new Set(files.map(fileKey))
     const unique: File[] = []
     let skipped = 0
@@ -45,7 +45,7 @@ export function ImageUploadGallery({
       })
     }
     if (skipped > 0) {
-      notifications.show({ color: 'yellow', title: '重複をスキップ', message: `${skipped}件` })
+      notifications.show({ color: "yellow", title: "重複をスキップ", message: `${skipped}件` })
     }
   }
 
@@ -72,12 +72,12 @@ export function ImageUploadGallery({
       for (const f of files) {
         const key = fileKey(f)
         if (exifMap[key]) continue
-        setExifMap((prev) => ({ ...prev, [key]: { status: 'pending' } }))
+        setExifMap((prev) => ({ ...prev, [key]: { status: "pending" } }))
         try {
           const exif = await extractBasicExif(f)
-          setExifMap((prev) => ({ ...prev, [key]: { status: 'ok', exif } }))
+          setExifMap((prev) => ({ ...prev, [key]: { status: "ok", exif } }))
         } catch {
-          setExifMap((prev) => ({ ...prev, [key]: { status: 'error' } }))
+          setExifMap((prev) => ({ ...prev, [key]: { status: "error" } }))
         }
       }
     }
@@ -94,35 +94,36 @@ export function ImageUploadGallery({
         const exif = exifState?.exif
         return (
           <Card key={`${file.name}-${idx}`} withBorder padding="xs">
-            <Image src={url} alt={file.name} h={160} fit="cover" radius="sm" />
-            <Text size="sm" mt={6} lineClamp={2}>
-              {file.name}
-            </Text>
-            {exifState?.status === 'pending' && (
-              <Text size="xs" c="dimmed" mt={4}>
-                EXIF解析中…
-              </Text>
-            )}
-            {exifState?.status === 'ok' && exif && (
-              <>
-                <Text size="xs" mt={4}>
-                  撮影日時: {formatDateTime(exif.date) || '不明'}
-                  <br />
-                  位置:{' '}
-                  {formatLatLng(exif.latitude, exif.longitude) || '不明'}
-                </Text>
-              </>
-            )}
-            {exifState?.status === 'error' && (
-              <Text size="xs" c="red" mt={4}>
-                EXIF解析失敗
-              </Text>
-            )}
-            <Group justify="flex-end" mt={6}>
-              <Button size="xs" variant="light" color="red" onClick={() => removeByKey(key)}>
-                削除
-              </Button>
+            <Group h={340}>
+              <Image src={url} alt={file.name} fit="cover" radius="sm" />
             </Group>
+            <div>
+              {exifState?.status === "pending" && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  EXIF解析中…
+                </Text>
+              )}
+              {exifState?.status === "ok" && exif && (
+                <>
+                  <Text size="sm" mt={10}>
+                    撮影日時: {formatDateTime(exif.date) || "不明"}
+                    <br />
+                    位置:{" "}
+                    {formatLatLng(exif.latitude, exif.longitude) || "不明"}
+                  </Text>
+                </>
+              )}
+              {exifState?.status === "error" && (
+                <Text size="xs" c="red" mt={4}>
+                  EXIF解析失敗
+                </Text>
+              )}
+              <Group justify="flex-end" mt={6}>
+                <Button justify="flex-end" size="xs" variant="light" color="red" onClick={() => removeByKey(key)}>
+                  削除
+                </Button>
+              </Group>
+            </div>
           </Card>
         )
       }),
