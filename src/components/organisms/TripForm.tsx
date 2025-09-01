@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/ja";
 import { useForm } from "@mantine/form";
 import { css } from "@emotion/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 interface Member {
   name: string;
@@ -59,6 +59,16 @@ export function TripForm({ onSubmit, onFormApi }: TripFormProps) {
     },
   });
 
+  const onSubmitRef = useRef(onSubmit);
+  useEffect(() => {
+    onSubmitRef.current = onSubmit;
+  }, [onSubmit]);
+
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
   const addMember = () => form.insertListItem("members", { name: "", episode: "" });
   const removeMember = (index: number) => form.removeListItem("members", index);
   const addHotel = () => form.insertListItem("hotels", "");
@@ -71,17 +81,19 @@ export function TripForm({ onSubmit, onFormApi }: TripFormProps) {
   const api: TripFormApi = useMemo(
     () => ({
       submit: () => {
-        const res = form.validate();
+        const currentForm = formRef.current;
+        const res = currentForm.validate();
         if (!res.hasErrors) {
-          onSubmit(form.values);
+          onSubmitRef.current(currentForm.values);
         }
       },
-      reset: () => form.reset(),
-      isValid: () => !form.validate().hasErrors,
-      getValues: () => form.values,
+      reset: () => formRef.current.reset(),
+      isValid: () => !formRef.current.validate().hasErrors,
+      getValues: () => formRef.current.values,
     }),
-    [form, onSubmit],
+    [],
   );
+
   useEffect(() => {
     if (onFormApi) {
       onFormApi(api);
@@ -176,8 +188,8 @@ export function TripForm({ onSubmit, onFormApi }: TripFormProps) {
           {...form.getInputProps("purpose")}
         />
 
-        <Divider label="参加メンバー" />
         <Stack gap="sm">
+          <Divider label="参加メンバー" />
           {form.values.members.map((_, idx) => (
             <Group key={idx} align="flex-end" wrap="wrap">
               <TextInput
