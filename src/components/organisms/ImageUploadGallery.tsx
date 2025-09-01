@@ -3,11 +3,13 @@ import { Button, Card, Group, Image, SimpleGrid, Stack, Text, TextInput } from "
 import { notifications } from "@mantine/notifications";
 import { UploadDropzone } from "../molecules/UploadDropzone";
 import { extractBasicExif, formatDateTime, BasicExif } from "../../utils/exif";
+import { css } from "@emotion/react";
 
 interface Props {
   accept?: string[];
   maxSize?: number;
   onChange?: (files: File[]) => void;
+  value?: File[];
 }
 
 interface MediaExif {
@@ -19,15 +21,25 @@ export function ImageUploadGallery({
   accept = ["image/*"],
   maxSize = 50 * 1024 * 1024,
   onChange,
+  value,
 }: Props) {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>(value ?? []);
   const [exifMap, setExifMap] = useState<Record<string, MediaExif>>({});
   const [placeMap, setPlaceMap] = useState<Record<string, string>>({});
+
+  // Sync from controlled value
+  useEffect(() => {
+    if (value) {
+      setFiles(value);
+    }
+  }, [value]);
 
   const fileKey = (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`;
 
   const handleAdd = (added: File[]) => {
-    if (!added?.length) return;
+    if (!added?.length) {
+      return;
+    }
     const onlyImages = added.filter((f) => f.type.startsWith("image/"));
     const existing = new Set(files.map(fileKey));
     const unique: File[] = [];
@@ -80,7 +92,9 @@ export function ImageUploadGallery({
     const run = async () => {
       for (const f of files) {
         const key = fileKey(f);
-        if (exifMap[key]) continue;
+        if (exifMap[key]) {
+          continue;
+        }
         setExifMap((prev) => ({ ...prev, [key]: { status: "pending" } }));
         try {
           const exif = await extractBasicExif(f);
@@ -101,10 +115,8 @@ export function ImageUploadGallery({
         const key = fileKey(file);
 
         return (
-          <Card key={`${file.name}-${idx}`} withBorder padding="xs">
-            <Group h={340}>
-              <Image src={url} alt={file.name} fit="cover" radius="sm" />
-            </Group>
+          <Card key={`${file.name}-${idx}`} withBorder padding="xs" css={imageCardStyle}>
+            <Image src={url} alt={file.name} fit="cover" radius="sm" />
             <div>
               <ExifData
                 mediaExif={exifMap[key]}
@@ -131,7 +143,12 @@ export function ImageUploadGallery({
 
   return (
     <Stack gap="sm">
-      <UploadDropzone onFilesAdded={handleAdd} accept={accept} maxSize={maxSize} />
+      <UploadDropzone
+        onFilesAdded={handleAdd}
+        accept={accept}
+        maxSize={maxSize}
+        label="旅の思い出"
+      />
       {files.length > 0 && (
         <>
           <Group justify="space-between">
@@ -166,10 +183,21 @@ const ExifData = ({ mediaExif, placeName, onPlaceNameChange }: ExifDataProps) =>
     );
   }
 
+  const ShootingDate = (props: { dateTime?: Date }) => {
+    const message = props.dateTime ? formatDateTime(props.dateTime) : "不明";
+    return (
+      <Text size="sm">
+        撮影日時
+        <br />
+        <div css={shootingMessageStyle}>{message}</div>
+      </Text>
+    );
+  };
+
   if (!exif) {
     return (
-      <Stack gap={4} mt={10}>
-        <Text size="sm">撮影日時: 不明</Text>
+      <Stack gap={4}>
+        <ShootingDate />
         <TextInput
           label="場所名（編集可）"
           placeholder="例: 東京駅 丸の内口"
@@ -183,7 +211,7 @@ const ExifData = ({ mediaExif, placeName, onPlaceNameChange }: ExifDataProps) =>
 
   return (
     <Stack gap={4} mt={10}>
-      <Text size="sm">撮影日時: {formatDateTime(exif.date) || "不明"}</Text>
+      <ShootingDate dateTime={exif.date} />
       <TextInput
         label="場所名（編集可）"
         placeholder="例: 東京駅 丸の内口"
@@ -194,3 +222,14 @@ const ExifData = ({ mediaExif, placeName, onPlaceNameChange }: ExifDataProps) =>
     </Stack>
   );
 };
+
+const imageCardStyle = css`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+const shootingMessageStyle = css`
+  margin-left: 6px;
+`;

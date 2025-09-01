@@ -11,7 +11,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function coerceDate(value: unknown): Date | undefined {
-  if (value instanceof Date) return value;
+  if (value instanceof Date) {
+    return value;
+  }
   if (typeof value === "string" || typeof value === "number") {
     const d = new Date(value);
     return isNaN(d.getTime()) ? undefined : d;
@@ -22,7 +24,9 @@ function coerceDate(value: unknown): Date | undefined {
 // (reserved) If GPS timestamp is needed later, implement here.
 
 export async function extractBasicExif(file: File): Promise<BasicExif> {
-  if (!file.type.startsWith("image/")) return {};
+  if (!file.type.startsWith("image/")) {
+    return {};
+  }
 
   let gps: unknown;
   let tags: unknown;
@@ -43,21 +47,29 @@ export async function extractBasicExif(file: File): Promise<BasicExif> {
   if (isRecord(tags)) {
     const dateRaw = tags["DateTimeOriginal"] ?? tags["CreateDate"] ?? tags["ModifyDate"];
     const date = coerceDate(dateRaw);
-    if (date) result.date = date;
+    if (date) {
+      result.date = date;
+    }
   }
 
   if (isRecord(gps)) {
     const lat = gps["latitude"];
     const lng = gps["longitude"];
-    if (typeof lat === "number") result.latitude = lat;
-    if (typeof lng === "number") result.longitude = lng;
+    if (typeof lat === "number") {
+      result.latitude = lat;
+    }
+    if (typeof lng === "number") {
+      result.longitude = lng;
+    }
   }
 
   return result;
 }
 
 export function formatDateTime(d?: Date) {
-  if (!d) return undefined;
+  if (!d) {
+    return undefined;
+  }
   try {
     return new Intl.DateTimeFormat("ja-JP", {
       year: "numeric",
