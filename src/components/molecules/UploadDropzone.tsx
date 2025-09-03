@@ -10,12 +10,12 @@ interface UploadDropzoneProps {
   label?: string;
 }
 
-export function UploadDropzone({
+export const UploadDropzone = ({
   onFilesAdded,
   accept = ["image/*", "video/*"],
   maxSize = 50 * 1024 * 1024, // 50MB
   label,
-}: UploadDropzoneProps) {
+}: UploadDropzoneProps) => {
   const handleDrop = (files: File[]) => {
     if (!files?.length) {
       return;
@@ -63,7 +63,7 @@ export function UploadDropzone({
       </Dropzone>
     </>
   );
-}
+};
 
 const labelStyle = css`
   font-size: 18px;

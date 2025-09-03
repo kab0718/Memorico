@@ -5,7 +5,7 @@ export interface GenerateResultProps {
   onRestart: () => void;
 }
 
-export function GenerateResult({ onRestart }: GenerateResultProps) {
+export const GenerateResult = ({ onRestart }: GenerateResultProps) => {
   return (
     <Center h="100vh">
       <Paper withBorder p="lg" radius="md" style={{ width: 560 }}>
@@ -22,4 +22,4 @@ export function GenerateResult({ onRestart }: GenerateResultProps) {
       </Paper>
     </Center>
   );
-}
+};

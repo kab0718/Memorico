@@ -2,73 +2,16 @@ import { Button, Group, Stack, TextInput, Textarea, Divider, Checkbox } from "@m
 import { DatePickerInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import "dayjs/locale/ja";
-import { useForm } from "@mantine/form";
+import type { UseFormReturnType } from "@mantine/form";
 import { css } from "@emotion/react";
-import { useEffect, useMemo, useRef } from "react";
-
-interface Member {
-  name: string;
-  episode?: string;
-}
-
-export interface TripFormValues {
-  purpose?: string;
-  members: Member[];
-  hotels: string[];
-  date: { start: string; end: string };
-  dayTrip?: boolean;
-}
-
-export interface TripFormApi {
-  submit: () => void;
-  reset: () => void;
-  isValid: () => boolean;
-  getValues: () => TripFormValues;
-}
+import { TripFormValues } from "../../types/tripFormValues";
 
 export interface TripFormProps {
+  form: UseFormReturnType<TripFormValues>;
   onSubmit: (values: TripFormValues) => void;
-  onFormApi?: (api: TripFormApi) => void;
 }
 
-export function TripForm({ onSubmit, onFormApi }: TripFormProps) {
-  const form = useForm<TripFormValues>({
-    initialValues: {
-      purpose: "",
-      members: [{ name: "", episode: "" }],
-      hotels: [""],
-      date: { start: "", end: "" },
-      dayTrip: false,
-    },
-    validate: (values) => {
-      const errors: Record<string, string> = {};
-      // 参加メンバーの名前必須（全員）
-      values.members.forEach((m, idx) => {
-        if (!m?.name || m.name.trim().length === 0) {
-          errors[`members.${idx}.name`] = "必須です";
-        }
-      });
-      // 日付必須
-      if (!values.date?.start) {
-        errors["date.start"] = "開始日は必須です";
-      }
-      if (!values.dayTrip && !values.date?.end) {
-        errors["date.end"] = "終了日は必須です";
-      }
-      return errors;
-    },
-  });
-
-  const onSubmitRef = useRef(onSubmit);
-  useEffect(() => {
-    onSubmitRef.current = onSubmit;
-  }, [onSubmit]);
-
-  const formRef = useRef(form);
-  useEffect(() => {
-    formRef.current = form;
-  }, [form]);
-
+export const TripForm = ({ form, onSubmit }: TripFormProps) => {
   const addMember = () => form.insertListItem("members", { name: "", episode: "" });
   const removeMember = (index: number) => form.removeListItem("members", index);
   const addHotel = () => form.insertListItem("hotels", "");
@@ -76,29 +19,6 @@ export function TripForm({ onSubmit, onFormApi }: TripFormProps) {
 
   const toDate = (s?: string) => (s ? new Date(s) : null);
   const fmt = (d: Date | null) => (d ? dayjs(d).format("YYYY-MM-DD") : "");
-
-  // expose imperative API to parent (effect to avoid setState during render)
-  const api: TripFormApi = useMemo(
-    () => ({
-      submit: () => {
-        const currentForm = formRef.current;
-        const res = currentForm.validate();
-        if (!res.hasErrors) {
-          onSubmitRef.current(currentForm.values);
-        }
-      },
-      reset: () => formRef.current.reset(),
-      isValid: () => !formRef.current.validate().hasErrors,
-      getValues: () => formRef.current.values,
-    }),
-    [],
-  );
-
-  useEffect(() => {
-    if (onFormApi) {
-      onFormApi(api);
-    }
-  }, [onFormApi, api]);
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)} noValidate>
@@ -229,7 +149,7 @@ export function TripForm({ onSubmit, onFormApi }: TripFormProps) {
       </Stack>
     </form>
   );
-}
+};
 
 const checkboxStyle = (isError: boolean) => css`
   margin-bottom: ${isError ? "27px" : "8px"};

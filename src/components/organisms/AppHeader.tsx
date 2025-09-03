@@ -1,7 +1,7 @@
 import React from "react";
 import { Group, Text } from "@mantine/core";
 
-export function AppHeader() {
+export const AppHeader = () => {
   const title = "TravelGuide";
   return (
     <header
@@ -20,4 +20,4 @@ export function AppHeader() {
       </Group>
     </header>
   );
-}
+};

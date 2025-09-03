@@ -17,12 +17,12 @@ interface MediaExif {
   exif?: BasicExif;
 }
 
-export function ImageUploadGallery({
+export const ImageUploadGallery = ({
   accept = ["image/*"],
   maxSize = 50 * 1024 * 1024,
   onChange,
   value,
-}: Props) {
+}: Props) => {
   const [files, setFiles] = useState<File[]>(value ?? []);
   const [exifMap, setExifMap] = useState<Record<string, MediaExif>>({});
   const [placeMap, setPlaceMap] = useState<Record<string, string>>({});
@@ -162,7 +162,7 @@ export function ImageUploadGallery({
       )}
     </Stack>
   );
-}
+};
 
 interface ExifDataProps {
   mediaExif: MediaExif | undefined;

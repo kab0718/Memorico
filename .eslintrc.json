@@ -29,6 +29,14 @@
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
     ],
     "react/no-unknown-property": ["error", { "ignore": ["css"] }],
-    "curly": ["error", "all"]
+    "curly": ["error", "all"],
+
+    // Reactコンポーネントはarrow functionに統一
+    "react/function-component-definition": [
+      "error",
+      { "namedComponents": "arrow-function", "unnamedComponents": "arrow-function" }
+    ],
+    // コールバックはarrowを優先
+    "prefer-arrow-callback": ["error", { "allowUnboundThis": true }]
   }
 }
