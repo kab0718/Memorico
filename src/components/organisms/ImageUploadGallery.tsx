@@ -1,52 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, Group, Image, SimpleGrid, Stack, Text, TextInput } from "@mantine/core";
+import { useEffect, useMemo, useState } from "react";
+import { Button, Card, Group, Image, SimpleGrid, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { UploadDropzone } from "../molecules/UploadDropzone";
-import { extractBasicExif, formatDateTime, BasicExif } from "../../utils/exif";
+import { extractBasicExif } from "../../utils/exif";
 import { css } from "@emotion/react";
+import { MediaExif } from "../../types/mediaExif";
+import { ExifDetail } from "../molecules/ExifDetail";
 
 interface Props {
-  accept?: string[];
-  maxSize?: number;
-  onChange?: (files: File[]) => void;
-  value?: File[];
+  onChange: (files: File[]) => void;
+  value: File[];
 }
 
-interface MediaExif {
-  status: "pending" | "ok" | "error";
-  exif?: BasicExif;
-}
+export const ImageUploadGallery = ({ onChange, value }: Props) => {
+  const accept = ["image/*"];
+  const maxSize = 50 * 1024 * 1024; // 50MB
 
-export const ImageUploadGallery = ({
-  accept = ["image/*"],
-  maxSize = 50 * 1024 * 1024,
-  onChange,
-  value,
-}: Props) => {
-  const [files, setFiles] = useState<File[]>(value ?? []);
+  const [files, setFiles] = useState<File[]>(value);
   const [exifMap, setExifMap] = useState<Record<string, MediaExif>>({});
   const [placeMap, setPlaceMap] = useState<Record<string, string>>({});
 
   // Sync from controlled value
   useEffect(() => {
-    if (value) {
-      setFiles(value);
-    }
+    setFiles(value);
   }, [value]);
 
-  const fileKey = useCallback(
-    (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`,
-    [],
-  );
+  const fileKey = (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`;
 
   const handleAdd = (added: File[]) => {
-    if (!added?.length) {
+    if (!added.length) {
       return;
     }
+
     const onlyImages = added.filter((f) => f.type.startsWith("image/"));
     const existing = new Set(files.map(fileKey));
     const unique: File[] = [];
     let skipped = 0;
+
     for (const f of onlyImages) {
       const key = fileKey(f);
       if (existing.has(key)) {
@@ -56,42 +46,34 @@ export const ImageUploadGallery = ({
       existing.add(key);
       unique.push(f);
     }
+
     if (unique.length > 0) {
       setFiles((prev) => {
         const next = [...prev, ...unique];
-        onChange?.(next);
+        onChange(next);
         return next;
       });
     }
+
     if (skipped > 0) {
       notifications.show({ color: "yellow", title: "重複をスキップ", message: `${skipped}件` });
     }
   };
 
-  const removeByKey = useCallback(
-    (key: string) => {
-      setFiles((prev) => {
-        const next = prev.filter((f) => fileKey(f) !== key);
-        onChange?.(next);
-        return next;
-      });
-      setExifMap((prev) => {
-        const { [key]: _removed, ...rest } = prev;
-        return rest;
-      });
-      setPlaceMap((prev) => {
-        const { [key]: _p, ...rest } = prev;
-        return rest;
-      });
-    },
-    [onChange, fileKey],
-  );
-
-  const clearAll = () => {
-    setFiles([]);
-    setExifMap({});
-    setPlaceMap({});
-    onChange?.([]);
+  const removeByKey = (key: string) => {
+    setFiles((prev) => {
+      const next = prev.filter((f) => fileKey(f) !== key);
+      onChange(next);
+      return next;
+    });
+    setExifMap((prev) => {
+      const { [key]: _removed, ...rest } = prev;
+      return rest;
+    });
+    setPlaceMap((prev) => {
+      const { [key]: _p, ...rest } = prev;
+      return rest;
+    });
   };
 
   useEffect(() => {
@@ -124,7 +106,7 @@ export const ImageUploadGallery = ({
           <Card key={`${file.name}-${idx}`} withBorder padding="xs" css={imageCardStyle}>
             <Image src={url} alt={file.name} fit="cover" radius="sm" />
             <div>
-              <ExifData
+              <ExifDetail
                 mediaExif={exifMap[key]}
                 placeName={placeMap[key] ?? ""}
                 onPlaceNameChange={(v) => setPlaceMap((prev) => ({ ...prev, [key]: v }))}
@@ -144,7 +126,8 @@ export const ImageUploadGallery = ({
           </Card>
         );
       }),
-    [files, exifMap, placeMap, removeByKey, fileKey],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [files, exifMap, placeMap],
   );
 
   return (
@@ -154,72 +137,10 @@ export const ImageUploadGallery = ({
         <>
           <Group justify="space-between">
             <Text fw={600}>選択済みファイル（{files.length}）</Text>
-            <Button variant="light" color="red" size="xs" onClick={clearAll}>
-              クリア
-            </Button>
           </Group>
           <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }}>{previews}</SimpleGrid>
         </>
       )}
-    </Stack>
-  );
-};
-
-interface ExifDataProps {
-  mediaExif: MediaExif | undefined;
-  placeName: string;
-  onPlaceNameChange: (value: string) => void;
-}
-
-const ExifData = ({ mediaExif, placeName, onPlaceNameChange }: ExifDataProps) => {
-  const status = mediaExif?.status;
-  const exif = mediaExif?.exif;
-
-  if (status !== "ok") {
-    const message = status === "pending" ? "EXIF解析中…" : "EXIF解析失敗";
-    return (
-      <Text size="xs" c="dimmed" mt={4}>
-        {message}
-      </Text>
-    );
-  }
-
-  const ShootingDate = (props: { dateTime?: Date }) => {
-    const message = props.dateTime ? formatDateTime(props.dateTime) : "不明";
-    return (
-      <Text size="sm">
-        撮影日時
-        <br />
-        <div css={shootingMessageStyle}>{message}</div>
-      </Text>
-    );
-  };
-
-  if (!exif) {
-    return (
-      <Stack gap={4}>
-        <ShootingDate />
-        <TextInput
-          label="場所名（編集可）"
-          placeholder="例: 東京駅 丸の内口"
-          size="xs"
-          value={placeName}
-          onChange={(e) => onPlaceNameChange(e.currentTarget.value)}
-        />
-      </Stack>
-    );
-  }
-
-  return (
-    <Stack gap={4} mt={10}>
-      <ShootingDate dateTime={exif.date} />
-      <TextInput
-        label="場所名（編集可）"
-        placeholder="例: 東京駅 丸の内口"
-        size="xs"
-        value={placeName}
-        onChange={(e) => onPlaceNameChange(e.currentTarget.value)}
-      />
     </Stack>
   );
 };
@@ -229,8 +150,4 @@ const imageCardStyle = css`
   flex-direction: column;
   justify-content: space-between;
   gap: 8px;
-`;
-
-const shootingMessageStyle = css`
-  margin-left: 6px;
 `;

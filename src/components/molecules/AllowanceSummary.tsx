@@ -11,7 +11,7 @@ interface Props {
 
 export const AllowanceSummary = ({ summary, onEdit, onDelete }: Props) => {
   return (
-    <Paper withBorder p="md" radius="md">
+    <Paper withBorder p="md" radius="md" w="100%">
       <Group justify="space-between" align="center">
         <Stack gap={2} css={leftStackStyle}>
           <Text fw={700} css={titleTextStyle}>

@@ -1,3 +1,4 @@
+import { css } from "@emotion/react";
 import { Group, Stack, Text } from "@mantine/core";
 import { Dropzone, FileRejection } from "@mantine/dropzone";
 import { notifications } from "@mantine/notifications";
@@ -36,23 +37,26 @@ export const UploadDropzone = ({
   };
 
   return (
-    <>
-      <Dropzone
-        onDrop={handleDrop}
-        onReject={handleReject}
-        accept={accept}
-        maxSize={maxSize}
-        multiple
-      >
-        <Group justify="center" mih={140}>
-          <Stack gap={4} align="center">
-            <Text fw={600}>ここに画像をドラッグ&ドロップ</Text>
-            <Text c="dimmed" size="sm">
-              最大 {Math.round(maxSize / (1024 * 1024))}MB / ファイル
-            </Text>
-          </Stack>
-        </Group>
-      </Dropzone>
-    </>
+    <Dropzone
+      onDrop={handleDrop}
+      onReject={handleReject}
+      accept={accept}
+      maxSize={maxSize}
+      multiple
+      css={dropzoneStyle}
+    >
+      <Group justify="center" mih={140}>
+        <Stack gap={4} align="center">
+          <Text fw={600}>ここに画像をドラッグ&ドロップ</Text>
+          <Text c="dimmed" size="sm">
+            最大 {Math.round(maxSize / (1024 * 1024))}MB / ファイル
+          </Text>
+        </Stack>
+      </Group>
+    </Dropzone>
   );
 };
+
+const dropzoneStyle = css`
+  border: none;
+`;

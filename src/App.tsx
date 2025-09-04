@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Title, Button, Group, Center, Loader, Stack, Paper, Text, Modal } from "@mantine/core";
+import { Title, Button, Group, Center, Loader, Stack, Paper } from "@mantine/core";
 import { ImageUploadGallery } from "./components/organisms/ImageUploadGallery";
 import { TripForm } from "./components/organisms/TripForm";
 import { GenerateResult } from "./components/organisms/GenerateResult";
@@ -7,13 +7,11 @@ import { AppHeader } from "./components/organisms/AppHeader";
 import { useForm } from "@mantine/form";
 import { TripFormValues } from "./types/tripFormValues";
 import { AllowanceForm } from "./components/organisms/AllowanceForm";
-import { StepTitle } from "./components/Atomic/StepTitle";
-import { css } from "@emotion/react";
+import { StepCard } from "./components/molecules/StepCard";
 
 export const App = () => {
   const [active, setActive] = useState<number>(0);
   const [files, setFiles] = useState<File[]>([]);
-  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   const form = useForm<TripFormValues>({
     initialValues: {
@@ -47,8 +45,8 @@ export const App = () => {
   const handleSubmit = useCallback(
     (values: TripFormValues) => {
       console.log("TripForm submit", values);
-      setActive(2);
-      setTimeout(() => setActive(3), 1500);
+      setActive(3);
+      setTimeout(() => setActive(4), 1500);
     },
     [setActive],
   );
@@ -58,64 +56,40 @@ export const App = () => {
       <AppHeader />
       <Paper p="lg" radius="md">
         {active === 0 && (
-          <div css={stepStyle}>
-            <StepTitle title="旅の思い出" />
-            <ImageUploadGallery value={files} onChange={setFiles} />
-            <Group justify="flex-end">
+          <>
+            <StepCard label="旅の思い出をアップロード">
+              <ImageUploadGallery value={files} onChange={setFiles} />
+            </StepCard>
+            <Group justify="flex-end" mt="md">
               <NextButton onClick={next} disabled={files.length === 0} />
             </Group>
-          </div>
+          </>
         )}
+
         {active === 1 && (
-          <div css={stepStyle}>
-            <StepTitle title="旅の基本情報" />
-            <TripForm form={form} onSubmit={handleSubmit} />
-            <Group justify="space-between">
-              <Group>
-                <PrevButton onClick={back} />
-                <Button variant="subtle" color="red" onClick={() => setConfirmResetOpen(true)}>
-                  リセット
-                </Button>
-              </Group>
+          <>
+            <StepCard label="旅のしおりに載せる情報を入力">
+              <TripForm form={form} onSubmit={handleSubmit} />
+            </StepCard>
+            <Group justify="space-between" mt="md">
+              <PrevButton onClick={back} />
               <NextButton onClick={next} disabled={!form.isValid()} />
             </Group>
-
-            <Modal
-              opened={confirmResetOpen}
-              onClose={() => setConfirmResetOpen(false)}
-              title="リセット"
-              centered
-            >
-              <Text>すべての入力をリセットします。よろしいですか？</Text>
-              <Group justify="flex-end" mt="md">
-                <Button variant="light" onClick={() => setConfirmResetOpen(false)}>
-                  キャンセル
-                </Button>
-                <Button
-                  color="red"
-                  onClick={() => {
-                    form.reset();
-                    setConfirmResetOpen(false);
-                  }}
-                >
-                  リセット
-                </Button>
-              </Group>
-            </Modal>
-          </div>
+          </>
         )}
         {active === 2 && (
-          <div css={stepStyle}>
-            <StepTitle title="お小遣い帳" />
-            <AllowanceForm
-              value={form.values.allowance}
-              onChange={(v) => form.setFieldValue("allowance", v)}
-            />
-            <Group justify="space-between">
+          <>
+            <StepCard label="お小遣い帳を入力">
+              <AllowanceForm
+                value={form.values.allowance}
+                onChange={(v) => form.setFieldValue("allowance", v)}
+              />
+            </StepCard>
+            <Group justify="space-between" mt="md">
               <PrevButton onClick={back} />
-              <Button onClick={() => handleSubmit}>作成</Button>
+              <Button onClick={() => handleSubmit(form.values)}>作成</Button>
             </Group>
-          </div>
+          </>
         )}
         {active === 3 && (
           <Center h="100vh">
@@ -154,9 +128,3 @@ const PrevButton = (props: { onClick: () => void }) => {
     </Button>
   );
 };
-
-const stepStyle = css`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-`;

@@ -18,6 +18,6 @@ const headerStyle = css`
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--mantine-color-blue-0);
+  background: #fff7e8;
   border-bottom: 1px solid var(--mantine-color-gray-3);
 `;

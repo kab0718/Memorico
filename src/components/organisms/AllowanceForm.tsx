@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Group, Stack } from "@mantine/core";
+import { Button, Stack, Text, ThemeIcon } from "@mantine/core";
 import { Allowance, AllowanceDetail } from "../../types/allowance";
 import { AllowanceSummary } from "../molecules/AllowanceSummary";
 import { AllowanceDetailsModal } from "../molecules/AllowanceDetailsModal";
+import { css } from "@emotion/react";
+import { IconVocabulary } from "@tabler/icons-react";
 
 interface Props {
   value?: Allowance[];
@@ -110,11 +112,6 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     setEditingIndex(null);
   };
 
-  const handleReset = () => {
-    setSummaries([]);
-    onChange([]);
-  };
-
   const handleDelete = (idx: number) => {
     const updated = summaries.filter((_, i) => i !== idx);
     setSummaries(updated);
@@ -123,23 +120,31 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
 
   return (
     <Stack gap="sm">
-      <Group justify="space-between" align="center">
-        <Button onClick={openForAdd}>追加</Button>
-        {summaries.length > 0 && (
-          <Button variant="subtle" color="red" onClick={handleReset}>
-            すべて削除
-          </Button>
+      <div css={summaryGroupStyle}>
+        {summaries.length === 0 && (
+          <Stack align="center" gap={4}>
+            <ThemeIcon size={40} variant="white">
+              <IconVocabulary size={80} />
+            </ThemeIcon>
+            <Text fw={900} ta="center">
+              出費が登録されていません
+            </Text>
+          </Stack>
         )}
-      </Group>
 
-      {summaries.map((s, idx) => (
-        <AllowanceSummary
-          key={`${s.title}-${idx}`}
-          summary={s}
-          onEdit={() => openForEdit(idx)}
-          onDelete={() => handleDelete(idx)}
-        />
-      ))}
+        {summaries.map((s, idx) => (
+          <AllowanceSummary
+            key={`${s.title}-${idx}`}
+            summary={s}
+            onEdit={() => openForEdit(idx)}
+            onDelete={() => handleDelete(idx)}
+          />
+        ))}
+
+        <Button onClick={openForAdd} css={addButtonStyle}>
+          追加
+        </Button>
+      </div>
 
       <AllowanceDetailsModal
         opened={opened}
@@ -166,3 +171,14 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     </Stack>
   );
 };
+
+const summaryGroupStyle = css`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+`;
+
+const addButtonStyle = css`
+  max-width: 300px;
+`;
