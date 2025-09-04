@@ -26,7 +26,7 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
         <Group align="end" wrap="nowrap">
           {form.values.dayTrip ? (
             <DatePickerInput
-              style={{ flex: 1, maxWidth: "260px" }}
+              css={datePickerStyle}
               type="default"
               label="日程"
               placeholder="日付"
@@ -43,7 +43,7 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
             />
           ) : (
             <DatePickerInput
-              style={{ flex: 1, maxWidth: "260px" }}
+              css={datePickerStyle}
               type="range"
               label="日程"
               placeholder="開始日 〜 終了日"
@@ -80,7 +80,7 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
               <TextInput
                 label="宿泊先名"
                 placeholder="◯◯旅館"
-                style={{ flex: 2, maxWidth: "260px" }}
+                css={hotelInputStyle}
                 {...form.getInputProps(`hotels.${idx}`)}
               />
               <Button
@@ -116,17 +116,13 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
                 label="名前"
                 placeholder="山田 太郎"
                 withAsterisk
-                style={{ maxWidth: "160px" }}
+                css={memberNameInputStyle}
                 {...form.getInputProps(`members.${idx}.name`)}
               />
               <TextInput
                 label="エピソード"
                 placeholder="運転してくれた"
-                style={{
-                  minWidth: "200px",
-                  flex: 2,
-                  marginBottom: form.errors[`members.${idx}.name`] !== undefined ? "19px" : "0",
-                }}
+                css={episodeInputStyle(!!form.errors[`members.${idx}.name`])}
                 {...form.getInputProps(`members.${idx}.episode`)}
               />
               <Button
@@ -156,5 +152,25 @@ const checkboxStyle = (isError: boolean) => css`
 `;
 
 const memberDeleteButtonStyle = (isError: boolean) => css`
+  margin-bottom: ${isError ? "19px" : "0"};
+`;
+
+const datePickerStyle = css`
+  flex: 1;
+  max-width: 260px;
+`;
+
+const hotelInputStyle = css`
+  flex: 2;
+  max-width: 260px;
+`;
+
+const memberNameInputStyle = css`
+  max-width: 160px;
+`;
+
+const episodeInputStyle = (isError: boolean) => css`
+  min-width: 200px;
+  flex: 2;
   margin-bottom: ${isError ? "19px" : "0"};
 `;

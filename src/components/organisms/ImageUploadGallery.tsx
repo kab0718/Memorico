@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, Group, Image, SimpleGrid, Stack, Text, TextInput } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { UploadDropzone } from "../molecules/UploadDropzone";
@@ -34,7 +34,10 @@ export const ImageUploadGallery = ({
     }
   }, [value]);
 
-  const fileKey = (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`;
+  const fileKey = useCallback(
+    (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`,
+    [],
+  );
 
   const handleAdd = (added: File[]) => {
     if (!added?.length) {
@@ -65,21 +68,24 @@ export const ImageUploadGallery = ({
     }
   };
 
-  const removeByKey = (key: string) => {
-    setFiles((prev) => {
-      const next = prev.filter((f) => fileKey(f) !== key);
-      onChange?.(next);
-      return next;
-    });
-    setExifMap((prev) => {
-      const { [key]: _removed, ...rest } = prev;
-      return rest;
-    });
-    setPlaceMap((prev) => {
-      const { [key]: _p, ...rest } = prev;
-      return rest;
-    });
-  };
+  const removeByKey = useCallback(
+    (key: string) => {
+      setFiles((prev) => {
+        const next = prev.filter((f) => fileKey(f) !== key);
+        onChange?.(next);
+        return next;
+      });
+      setExifMap((prev) => {
+        const { [key]: _removed, ...rest } = prev;
+        return rest;
+      });
+      setPlaceMap((prev) => {
+        const { [key]: _p, ...rest } = prev;
+        return rest;
+      });
+    },
+    [onChange, fileKey],
+  );
 
   const clearAll = () => {
     setFiles([]);
@@ -138,17 +144,12 @@ export const ImageUploadGallery = ({
           </Card>
         );
       }),
-    [files, exifMap, placeMap],
+    [files, exifMap, placeMap, removeByKey, fileKey],
   );
 
   return (
     <Stack gap="sm">
-      <UploadDropzone
-        onFilesAdded={handleAdd}
-        accept={accept}
-        maxSize={maxSize}
-        label="旅の思い出"
-      />
+      <UploadDropzone onFilesAdded={handleAdd} accept={accept} maxSize={maxSize} />
       {files.length > 0 && (
         <>
           <Group justify="space-between">

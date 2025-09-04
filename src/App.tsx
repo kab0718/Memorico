@@ -7,6 +7,8 @@ import { AppHeader } from "./components/organisms/AppHeader";
 import { useForm } from "@mantine/form";
 import { TripFormValues } from "./types/tripFormValues";
 import { AllowanceForm } from "./components/organisms/AllowanceForm";
+import { StepTitle } from "./components/Atomic/StepTitle";
+import { css } from "@emotion/react";
 
 export const App = () => {
   const [active, setActive] = useState<number>(0);
@@ -20,6 +22,7 @@ export const App = () => {
       hotels: [""],
       date: { start: "", end: "" },
       dayTrip: false,
+      allowance: [],
     },
     validate: (values) => {
       const errors: Record<string, string> = {};
@@ -55,24 +58,26 @@ export const App = () => {
       <AppHeader />
       <Paper p="lg" radius="md">
         {active === 0 && (
-          <>
+          <div css={stepStyle}>
+            <StepTitle title="旅の思い出" />
             <ImageUploadGallery value={files} onChange={setFiles} />
-            <Group justify="flex-end" mt="md">
+            <Group justify="flex-end">
               <NextButton onClick={next} disabled={files.length === 0} />
             </Group>
-          </>
+          </div>
         )}
         {active === 1 && (
-          <>
+          <div css={stepStyle}>
+            <StepTitle title="旅の基本情報" />
             <TripForm form={form} onSubmit={handleSubmit} />
-            <Group justify="space-between" mt="32px">
+            <Group justify="space-between">
               <Group>
                 <PrevButton onClick={back} />
                 <Button variant="subtle" color="red" onClick={() => setConfirmResetOpen(true)}>
                   リセット
                 </Button>
               </Group>
-              <NextButton onClick={next} disabled={!form.isValid} />
+              <NextButton onClick={next} disabled={!form.isValid()} />
             </Group>
 
             <Modal
@@ -97,16 +102,20 @@ export const App = () => {
                 </Button>
               </Group>
             </Modal>
-          </>
+          </div>
         )}
         {active === 2 && (
-          <>
-            <AllowanceForm />
-            <Group justify="space-between" mt="32px">
+          <div css={stepStyle}>
+            <StepTitle title="お小遣い帳" />
+            <AllowanceForm
+              value={form.values.allowance}
+              onChange={(v) => form.setFieldValue("allowance", v)}
+            />
+            <Group justify="space-between">
               <PrevButton onClick={back} />
               <Button onClick={() => handleSubmit}>作成</Button>
             </Group>
-          </>
+          </div>
         )}
         {active === 3 && (
           <Center h="100vh">
@@ -145,3 +154,9 @@ const PrevButton = (props: { onClick: () => void }) => {
     </Button>
   );
 };
+
+const stepStyle = css`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`;

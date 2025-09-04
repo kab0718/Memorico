@@ -1,5 +1,4 @@
-import { css } from "@emotion/react";
-import { Group, Stack, Text, Input } from "@mantine/core";
+import { Group, Stack, Text } from "@mantine/core";
 import { Dropzone, FileRejection } from "@mantine/dropzone";
 import { notifications } from "@mantine/notifications";
 
@@ -7,14 +6,12 @@ interface UploadDropzoneProps {
   onFilesAdded: (files: File[]) => void;
   accept?: string[];
   maxSize?: number; // bytes
-  label?: string;
 }
 
 export const UploadDropzone = ({
   onFilesAdded,
   accept = ["image/*", "video/*"],
   maxSize = 50 * 1024 * 1024, // 50MB
-  label,
 }: UploadDropzoneProps) => {
   const handleDrop = (files: File[]) => {
     if (!files?.length) {
@@ -40,11 +37,6 @@ export const UploadDropzone = ({
 
   return (
     <>
-      {label && (
-        <Input.Label required css={labelStyle}>
-          {label}
-        </Input.Label>
-      )}
       <Dropzone
         onDrop={handleDrop}
         onReject={handleReject}
@@ -64,8 +56,3 @@ export const UploadDropzone = ({
     </>
   );
 };
-
-const labelStyle = css`
-  font-size: 18px;
-  font-weight: 800;
-`;
