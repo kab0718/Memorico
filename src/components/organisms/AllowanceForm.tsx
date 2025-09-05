@@ -19,7 +19,6 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
   const [details, setDetails] = useState<AllowanceDetail[]>([defaultRow]);
   const [title, setTitle] = useState<string>("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [hasReceipt, setHasReceipt] = useState<boolean>(false);
 
   useEffect(() => {
     setSummaries(value);
@@ -40,7 +39,6 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
   const openForAdd = () => {
     setDetails([defaultRow]);
     setTitle("");
-    setHasReceipt(false);
     setOpened(true);
   };
 
@@ -51,7 +49,6 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
       amount: d.amount,
     }));
     setDetails(rows.length ? rows : [defaultRow]);
-    setHasReceipt(false);
     setTitle(target.title);
     setEditingIndex(idx);
     setOpened(true);
@@ -108,7 +105,6 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     // 次の入力に備えて初期化（モーダルは開いたまま）
     setDetails([defaultRow]);
     setTitle("");
-    setHasReceipt(false);
     setEditingIndex(null);
   };
 
@@ -116,6 +112,19 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     const updated = summaries.filter((_, i) => i !== idx);
     setSummaries(updated);
     onChange(updated);
+  };
+
+  const handleOcrPrefill = (payload: {
+    details: AllowanceDetail[];
+    total?: number;
+    titleHint?: string;
+  }) => {
+    if (payload.details && payload.details.length > 0) {
+      setDetails(payload.details);
+    }
+    if (payload.titleHint && title.trim().length === 0) {
+      setTitle(payload.titleHint);
+    }
   };
 
   return (
@@ -151,7 +160,6 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
         details={details}
         title={title}
         total={total}
-        hasReceipt={hasReceipt}
         onClose={() => setOpened(false)}
         onAddRow={addRow}
         onRemoveRow={removeRow}
@@ -160,13 +168,7 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
         onChangeTitle={setTitle}
         onSave={handleSave}
         onSaveAndContinue={handleSaveAndContinue}
-        onChangeReceipt={(v) => {
-          setHasReceipt(v);
-          if (v) {
-            // レシート入力は未実装のため、手入力行は初期化
-            setDetails([defaultRow]);
-          }
-        }}
+        onOcrPrefill={handleOcrPrefill}
       />
     </Stack>
   );
