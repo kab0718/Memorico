@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Title, Button, Group, Center, Loader, Stack, Paper } from "@mantine/core";
 import { ImageUploadGallery } from "./components/organisms/ImageUploadGallery";
 import { TripForm } from "./components/organisms/TripForm";
@@ -8,17 +8,19 @@ import { useForm } from "@mantine/form";
 import { TripFormValues } from "./types/tripFormValues";
 import { AllowanceForm } from "./components/organisms/AllowanceForm";
 import { StepCard } from "./components/molecules/StepCard";
+import { ImageAsset } from "./types/imageAsset";
 
 export const App = () => {
   const [active, setActive] = useState<number>(0);
-  const [files, setFiles] = useState<File[]>([]);
+  const [images, setImages] = useState<ImageAsset[]>([]);
 
   const form = useForm<TripFormValues>({
     initialValues: {
       purpose: "",
       members: [{ name: "", episode: "" }],
       hotels: [""],
-      date: { start: "", end: "" },
+      startDate: null,
+      endDate: null,
       dayTrip: false,
       allowance: [],
     },
@@ -29,10 +31,10 @@ export const App = () => {
           errors[`members.${idx}.name`] = "必須です";
         }
       });
-      if (!values.date?.start) {
+      if (!values.startDate) {
         errors["date.start"] = "日程は必須です";
       }
-      if (!values.dayTrip && !values.date?.end) {
+      if (!values.dayTrip && !values.endDate) {
         errors["date.end"] = "日程は必須です";
       }
       return errors;
@@ -42,14 +44,12 @@ export const App = () => {
   const next = () => setActive((c) => Math.min(c + 1, 3));
   const back = () => setActive((c) => Math.max(c - 1, 0));
 
-  const handleSubmit = useCallback(
-    (values: TripFormValues) => {
-      console.log("TripForm submit", values);
-      setActive(3);
-      setTimeout(() => setActive(4), 1500);
-    },
-    [setActive],
-  );
+  const handleSubmit = (values: TripFormValues) => {
+    console.log("TripForm submit", values);
+    console.log("Images:", images);
+    setActive(3);
+    setTimeout(() => setActive(4), 1500);
+  };
 
   return (
     <>
@@ -58,10 +58,10 @@ export const App = () => {
         {active === 0 && (
           <>
             <StepCard label="旅の思い出をアップロード">
-              <ImageUploadGallery value={files} onChange={setFiles} />
+              <ImageUploadGallery value={images} onChange={setImages} />
             </StepCard>
             <Group justify="flex-end" mt="md">
-              <NextButton onClick={next} disabled={files.length === 0} />
+              <NextButton onClick={next} disabled={images.length === 0} />
             </Group>
           </>
         )}
@@ -103,7 +103,7 @@ export const App = () => {
           <GenerateResult
             onRestart={() => {
               setActive(0);
-              setFiles([]);
+              setImages([]);
               form.reset();
             }}
           />

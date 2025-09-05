@@ -4,7 +4,8 @@ export interface TripFormValues {
   purpose?: string;
   members: Member[];
   hotels: string[];
-  date: { start: string; end: string };
+  startDate: Date | null;
+  endDate: Date | null;
   dayTrip?: boolean;
   allowance?: Allowance[];
 }

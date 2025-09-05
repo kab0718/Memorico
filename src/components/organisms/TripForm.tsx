@@ -1,6 +1,5 @@
 import { Button, Group, Stack, TextInput, Textarea, Divider, Checkbox } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import dayjs from "dayjs";
 import "dayjs/locale/ja";
 import type { UseFormReturnType } from "@mantine/form";
 import { css } from "@emotion/react";
@@ -17,9 +16,6 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
   const addHotel = () => form.insertListItem("hotels", "");
   const removeHotel = (index: number) => form.removeListItem("hotels", index);
 
-  const toDate = (s?: string) => (s ? new Date(s) : null);
-  const fmt = (d: Date | null) => (d ? dayjs(d).format("YYYY-MM-DD") : "");
-
   return (
     <form onSubmit={form.onSubmit(onSubmit)} noValidate>
       <Stack gap="md">
@@ -32,11 +28,11 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
               placeholder="日付"
               locale="ja"
               valueFormat="YYYY/MM/DD"
-              value={toDate(form.values.date.start)}
-              error={form.errors["date.start"]}
+              value={form.values.startDate}
+              error={form.errors["startDate"]}
               onChange={(d) => {
-                form.setFieldValue("date.start", fmt(d));
-                form.setFieldValue("date.end", fmt(d));
+                form.setFieldValue("startDate", d);
+                form.setFieldValue("endDate", d);
               }}
               firstDayOfWeek={0}
               withAsterisk
@@ -49,11 +45,11 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
               placeholder="開始日 〜 終了日"
               locale="ja"
               valueFormat="YYYY/MM/DD"
-              value={[toDate(form.values.date.start), toDate(form.values.date.end)]}
-              error={form.errors["date.start"] || form.errors["date.end"]}
+              value={[form.values.startDate, form.values.endDate]}
+              error={form.errors["startDate"] || form.errors["endDate"]}
               onChange={([start, end]) => {
-                form.setFieldValue("date.start", fmt(start));
-                form.setFieldValue("date.end", fmt(end));
+                form.setFieldValue("startDate", start);
+                form.setFieldValue("endDate", end);
               }}
               firstDayOfWeek={0}
               withAsterisk
@@ -62,13 +58,12 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
           <Checkbox
             label="日帰り"
             checked={!!form.values.dayTrip}
-            css={checkboxStyle(!!form.errors["date.start"] || !!form.errors["date.end"])}
+            css={checkboxStyle(!!form.errors["startDate"] || !!form.errors["endDate"])}
             onChange={(e) => {
               const checked = e.currentTarget.checked;
               form.setFieldValue("dayTrip", checked);
               if (checked) {
-                const start = toDate(form.values.date.start);
-                form.setFieldValue("date.end", fmt(start));
+                form.setFieldValue("endDate", form.values.startDate);
               }
             }}
           />

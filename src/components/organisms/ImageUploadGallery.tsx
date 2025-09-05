@@ -6,23 +6,24 @@ import { extractBasicExif } from "../../utils/exif";
 import { css } from "@emotion/react";
 import { MediaExif } from "../../types/mediaExif";
 import { ExifDetail } from "../molecules/ExifDetail";
+import { ImageAsset } from "../../types/imageAsset";
 
 interface Props {
-  onChange: (files: File[]) => void;
-  value: File[];
+  onChange: (images: ImageAsset[]) => void;
+  value: ImageAsset[];
 }
 
 export const ImageUploadGallery = ({ onChange, value }: Props) => {
   const accept = ["image/*"];
   const maxSize = 50 * 1024 * 1024; // 50MB
 
-  const [files, setFiles] = useState<File[]>(value);
+  const [images, setImages] = useState<ImageAsset[]>(value);
   const [exifMap, setExifMap] = useState<Record<string, MediaExif>>({});
   const [placeMap, setPlaceMap] = useState<Record<string, string>>({});
 
   // Sync from controlled value
   useEffect(() => {
-    setFiles(value);
+    setImages(value);
   }, [value]);
 
   const fileKey = (f: File) => `${f.name}__${f.type}__${f.size}__${f.lastModified}`;
@@ -32,23 +33,23 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
       return;
     }
 
-    const onlyImages = added.filter((f) => f.type.startsWith("image/"));
-    const existing = new Set(files.map(fileKey));
-    const unique: File[] = [];
+    const onlyImages = added.filter((file) => file.type.startsWith("image/"));
+    const existing = new Set(images.map((image) => fileKey(image.file)));
+    const unique: ImageAsset[] = [];
     let skipped = 0;
 
-    for (const f of onlyImages) {
-      const key = fileKey(f);
+    for (const file of onlyImages) {
+      const key = fileKey(file);
       if (existing.has(key)) {
         skipped += 1;
         continue;
       }
       existing.add(key);
-      unique.push(f);
+      unique.push({ file });
     }
 
     if (unique.length > 0) {
-      setFiles((prev) => {
+      setImages((prev) => {
         const next = [...prev, ...unique];
         onChange(next);
         return next;
@@ -61,8 +62,8 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
   };
 
   const removeByKey = (key: string) => {
-    setFiles((prev) => {
-      const next = prev.filter((f) => fileKey(f) !== key);
+    setImages((prev) => {
+      const next = prev.filter((image) => fileKey(image.file) !== key);
       onChange(next);
       return next;
     });
@@ -78,15 +79,25 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
 
   useEffect(() => {
     const run = async () => {
-      for (const f of files) {
-        const key = fileKey(f);
+      for (const image of images) {
+        const key = fileKey(image.file);
         if (exifMap[key]) {
           continue;
         }
         setExifMap((prev) => ({ ...prev, [key]: { status: "pending" } }));
         try {
-          const exif = await extractBasicExif(f);
+          const exif = await extractBasicExif(image.file);
           setExifMap((prev) => ({ ...prev, [key]: { status: "ok", exif } }));
+          // EXIFから日時が取れたら images に反映し、親にも伝播
+          if (exif?.date) {
+            setImages((prev) => {
+              const next = prev.map((img) =>
+                fileKey(img.file) === key ? { ...img, dateTime: exif.date } : img,
+              );
+              onChange(next);
+              return next;
+            });
+          }
         } catch {
           setExifMap((prev) => ({ ...prev, [key]: { status: "error" } }));
         }
@@ -94,11 +105,33 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
     };
     run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files]);
+  }, [images]);
+
+  // 場所名の編集 / 自動補完を images に反映し、親へ伝播
+  useEffect(() => {
+    setImages((prev) => {
+      let changed = false;
+      const next = prev.map((img) => {
+        const key = fileKey(img.file);
+        const name = placeMap[key];
+        if (typeof name === "string" && name !== img.placeName) {
+          changed = true;
+          return { ...img, placeName: name };
+        }
+        return img;
+      });
+      if (changed) {
+        onChange(next);
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeMap]);
 
   const previews = useMemo(
     () =>
-      files.map((file, idx) => {
+      images.map((image, idx) => {
+        const file = image.file;
         const url = URL.createObjectURL(file);
         const key = fileKey(file);
 
@@ -127,16 +160,16 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
         );
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [files, exifMap, placeMap],
+    [images, exifMap, placeMap],
   );
 
   return (
     <Stack gap="sm">
       <UploadDropzone onFilesAdded={handleAdd} accept={accept} maxSize={maxSize} />
-      {files.length > 0 && (
+      {images.length > 0 && (
         <>
           <Group justify="space-between">
-            <Text fw={600}>選択済みファイル（{files.length}）</Text>
+            <Text fw={600}>選択済みファイル（{images.length}）</Text>
           </Group>
           <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }}>{previews}</SimpleGrid>
         </>
