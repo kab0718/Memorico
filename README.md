@@ -1,4 +1,4 @@
-# TravelGuide (MVP scaffold)
+# Memorico (MVP scaffold)
 
 フロントエンドのみ（Vite + React のSPA）で構成。UIは Mantine v7、スタイルは Emotion を併用。バックエンドは未決定（TBD）。
 

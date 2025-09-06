@@ -2,7 +2,7 @@ import { Group, Text } from "@mantine/core";
 import { css } from "@emotion/react";
 
 export const AppHeader = () => {
-  const title = "TravelGuide";
+  const title = "Memorico";
   return (
     <header css={headerStyle}>
       <Group h={70} px="md" justify="space-between">
