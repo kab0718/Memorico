@@ -1,23 +1,24 @@
-import { Group, Text } from "@mantine/core";
+import { Group } from "@mantine/core";
 import { css } from "@emotion/react";
 
-export const AppHeader = () => {
+export const AppHeader = (): JSX.Element => {
   const title = "Memorico";
   return (
     <header css={headerStyle}>
       <Group h={70} px="md" justify="space-between">
-        <Text size="xl" fw={700}>
-          {title}
-        </Text>
+        <img src="/logo.png" alt={title} css={logoStyle} />
       </Group>
     </header>
   );
 };
 
 const headerStyle = css`
-  position: sticky;
-  top: 0;
-  z-index: 10;
   background: #fff7e8;
   border-bottom: 1px solid var(--mantine-color-gray-3);
+`;
+
+const logoStyle = css`
+  height: clamp(40px, 4vw, 68px);
+  width: auto;
+  display: block;
 `;
