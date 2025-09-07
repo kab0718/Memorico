@@ -9,10 +9,12 @@ import { TripFormValues } from "./types/tripFormValues";
 import { AllowanceForm } from "./components/organisms/AllowanceForm";
 import { StepCard } from "./components/molecules/StepCard";
 import { ImageAsset } from "./types/imageAsset";
+import { postImagesAndJson } from "./api/postImagesAndJson";
 
 export const App = () => {
   const [active, setActive] = useState<number>(0);
   const [images, setImages] = useState<ImageAsset[]>([]);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
 
   const form = useForm<TripFormValues>({
     initialValues: {
@@ -44,11 +46,19 @@ export const App = () => {
   const next = () => setActive((c) => Math.min(c + 1, 3));
   const back = () => setActive((c) => Math.max(c - 1, 0));
 
-  const handleSubmit = (values: TripFormValues) => {
-    console.log("TripForm submit", values);
-    console.log("Images:", images);
+  const handleSubmit = async (values: TripFormValues) => {
     setActive(3);
-    setTimeout(() => setActive(4), 1500);
+    postImagesAndJson(images, values)
+      .then((res) => {
+        console.log("Success", res);
+        setPdfBlob(res);
+        setActive(4);
+      })
+      .catch((err) => {
+        console.error("Error", err);
+        alert("エラーが発生しました。初めからやり直してください。");
+        setActive(1);
+      });
   };
 
   return (
@@ -101,6 +111,7 @@ export const App = () => {
         )}
         {active === 4 && (
           <GenerateResult
+            pdfBlob={pdfBlob!}
             onRestart={() => {
               setActive(0);
               setImages([]);
