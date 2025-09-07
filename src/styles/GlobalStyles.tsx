@@ -4,13 +4,16 @@ export const GlobalStyles = () => (
   <Global
     styles={css`
       :root {
-        --rounded-label-font: "M PLUS Rounded 1c", "Hiragino Kaku Gothic ProN", "Noto Sans JP",
-          system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-          "Apple Color Emoji", "Segoe UI Emoji";
+        --rounded-label-font:
+          "M PLUS Rounded 1c", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui,
+          -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
       }
 
       /* アプリ全体の基本フォント */
-      html, body, #root {
+      html,
+      body,
+      #root {
         font-family: var(--rounded-label-font);
         font-weight: 500;
         letter-spacing: 0.2px;
@@ -44,4 +47,3 @@ export const GlobalStyles = () => (
     `}
   />
 );
-
