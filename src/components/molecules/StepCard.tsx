@@ -22,9 +22,12 @@ export const StepCard = ({ label, children }: Props) => {
 
 const titleStyle = css`
   padding: 16px 24px;
-  background-color: #ffd66d;
+  /* WCAG AA: 4.5:1 以上を満たす配色に調整 */
+  background-color: var(--mantine-color-yellow-2);
+  color: var(--mantine-color-dark-9);
 `;
 
 const contentsStyle = css`
-  margin: 24px;
+  /* ヘッダー直下にゆとりを持たせる */
+  margin: 32px 24px 24px 24px;
 `;

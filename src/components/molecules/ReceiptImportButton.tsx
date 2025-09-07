@@ -29,7 +29,7 @@ export const ReceiptImportButton = ({ onSelect }: Props) => {
   return (
     <>
       <Button variant="light" onClick={handleClick}>
-        レシート読込
+        レシート読み込み
       </Button>
       <input
         ref={inputRef}

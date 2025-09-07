@@ -70,7 +70,7 @@ export const App = () => {
             <StepCard label="旅の思い出をアップロード">
               <ImageUploadGallery value={images} onChange={setImages} />
             </StepCard>
-            <Group justify="flex-end" mt="md">
+            <Group justify="flex-end" mt="xl">
               <NextButton onClick={next} disabled={images.length === 0} />
             </Group>
           </>
@@ -81,7 +81,7 @@ export const App = () => {
             <StepCard label="旅のしおりに載せる情報を入力">
               <TripForm form={form} onSubmit={handleSubmit} />
             </StepCard>
-            <Group justify="space-between" mt="md">
+            <Group justify="space-between" mt="xl">
               <PrevButton onClick={back} />
               <NextButton onClick={next} disabled={!form.isValid()} />
             </Group>
@@ -95,9 +95,11 @@ export const App = () => {
                 onChange={(v) => form.setFieldValue("allowance", v)}
               />
             </StepCard>
-            <Group justify="space-between" mt="md">
+            <Group justify="space-between" mt="xl">
               <PrevButton onClick={back} />
-              <Button onClick={() => handleSubmit(form.values)}>作成</Button>
+              <Button color="blue" onClick={() => handleSubmit(form.values)}>
+                作成
+              </Button>
             </Group>
           </>
         )}

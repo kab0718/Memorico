@@ -51,7 +51,7 @@ export const AllowanceDetailsModal = ({
         if (!res.items || res.items.length == 0) {
           notifications.show({
             color: "yellow",
-            title: "OCR結果",
+            title: "レシート読み込み結果",
             message: "明細が見つかりません",
           });
           return;
@@ -60,7 +60,7 @@ export const AllowanceDetailsModal = ({
         onOcrPrefill(res);
       })
       .catch((err) => {
-        notifications.show({ color: "red", title: "OCRエラー", message: `${err}` });
+        notifications.show({ color: "red", title: "レシート読み込みエラー", message: `${err}` });
       })
       .finally(() => {
         setStatus("idle");
@@ -71,13 +71,12 @@ export const AllowanceDetailsModal = ({
     <Modal
       opened={opened}
       onClose={onClose}
-      title="明細入力"
       centered
       size="lg"
       closeOnClickOutside={false}
       closeOnEscape={false}
     >
-      <Stack gap="sm">
+      <Stack gap="md" pb="md">
         <>
           {status === "running" && (
             <Group align="center">
@@ -125,13 +124,13 @@ export const AllowanceDetailsModal = ({
         </Paper>
 
         <Group justify="flex-end">
-          <Button variant="light" onClick={onClose}>
+          <Button variant="subtle" onClick={onClose}>
             キャンセル
           </Button>
           <Button variant="light" onClick={onSaveAndContinue} disabled={saveDisabled}>
             繰り返し作成
           </Button>
-          <Button onClick={onSave} disabled={saveDisabled}>
+          <Button color="blue" onClick={onSave} disabled={saveDisabled}>
             確認して保存
           </Button>
         </Group>

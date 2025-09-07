@@ -11,7 +11,7 @@ interface UploadDropzoneProps {
 
 export const UploadDropzone = ({
   onFilesAdded,
-  accept = ["image/*", "video/*"],
+  accept = ["image/*"],
   maxSize = 50 * 1024 * 1024, // 50MB
 }: UploadDropzoneProps) => {
   const handleDrop = (files: File[]) => {
@@ -19,7 +19,7 @@ export const UploadDropzone = ({
       return;
     }
     onFilesAdded(files);
-    notifications.show({ title: "ファイルを追加しました", message: `${files.length}件` });
+    notifications.show({ title: "画像を追加しました", message: `${files.length}件` });
   };
 
   const handleReject = (rejections: FileRejection[]) => {
@@ -31,7 +31,7 @@ export const UploadDropzone = ({
     rejections.forEach((r) => r.errors.forEach((e) => reasons.add(e.code)));
     notifications.show({
       color: "red",
-      title: "一部のファイルを受け付けできません",
+      title: "一部の画像を受け付けできません",
       message: `件数: ${total} / 理由: ${Array.from(reasons).join(", ")}`,
     });
   };
@@ -49,7 +49,7 @@ export const UploadDropzone = ({
         <Stack gap={4} align="center">
           <Text fw={600}>ここに画像をドラッグ&ドロップ</Text>
           <Text c="dimmed" size="sm">
-            最大 {Math.round(maxSize / (1024 * 1024))}MB / ファイル
+            最大 {Math.round(maxSize / (1024 * 1024))}MB / 画像
           </Text>
         </Stack>
       </Group>

@@ -169,7 +169,7 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
       {images.length > 0 && (
         <>
           <Group justify="space-between">
-            <Text fw={600}>選択済みファイル（{images.length}）</Text>
+            <Text fw={600}>選択済み画像（{images.length}）</Text>
           </Group>
           <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }}>{previews}</SimpleGrid>
         </>
