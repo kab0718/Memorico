@@ -1,6 +1,6 @@
 import { Button, Group, Modal, Paper, Stack, Text, TextInput, Loader } from "@mantine/core";
 import { css } from "@emotion/react";
-import { AmountText } from "../Atomic/AmountText";
+import { AmountText } from "../atoms/AmountText";
 import { AllowanceDetailRow } from "./AllowanceDetailRow";
 import { AllowanceDetail } from "../../types/allowance";
 import { ReceiptImportButton } from "./ReceiptImportButton";

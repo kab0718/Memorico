@@ -1,5 +1,5 @@
 import { Button, Group, TextInput } from "@mantine/core";
-import { NumericTextInput } from "../Atomic/NumericTextInput";
+import { NumericTextInput } from "../atoms/NumericTextInput";
 import { css } from "@emotion/react";
 import { AllowanceDetail } from "../../types/allowance";
 

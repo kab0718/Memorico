@@ -1,7 +1,7 @@
 import { Button, Group, Paper, Stack, Text } from "@mantine/core";
 import { css } from "@emotion/react";
 import type { Allowance } from "../../types/allowance";
-import { AmountText } from "../Atomic/AmountText";
+import { AmountText } from "../atoms/AmountText";
 
 interface Props {
   summary: Allowance;
