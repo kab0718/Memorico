@@ -1,23 +1,13 @@
-import {
-  Button,
-  Group,
-  Modal,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-  Loader,
-  Progress,
-} from "@mantine/core";
+import { Button, Group, Modal, Paper, Stack, Text, TextInput, Loader } from "@mantine/core";
 import { css } from "@emotion/react";
 import { AmountText } from "../Atomic/AmountText";
 import { AllowanceDetailRow } from "./AllowanceDetailRow";
 import { AllowanceDetail } from "../../types/allowance";
 import { ReceiptImportButton } from "./ReceiptImportButton";
-import { useReceiptOcr } from "../../hooks/useReceiptOcr";
-import { parseReceiptText } from "../../utils/parseReceiptText";
 import { notifications } from "@mantine/notifications";
-import { useEffect } from "react";
+import { useState } from "react";
+import { postReceipt } from "../../api/receipt";
+import { ReceiptResult } from "../../api/types";
 
 interface Props {
   opened: boolean;
@@ -32,11 +22,7 @@ interface Props {
   onChangeTitle: (value: string) => void;
   onSave: () => void;
   onSaveAndContinue: () => void;
-  onOcrPrefill: (payload: {
-    details: AllowanceDetail[];
-    total?: number;
-    titleHint?: string;
-  }) => void;
+  onOcrPrefill: (payload: ReceiptResult) => void;
 }
 
 export const AllowanceDetailsModal = ({
@@ -55,34 +41,30 @@ export const AllowanceDetailsModal = ({
   onOcrPrefill,
 }: Props) => {
   const saveDisabled = total < 1 || title.trim().length === 0;
-  const { status, progress, text, error, run, reset } = useReceiptOcr();
-
-  useEffect(() => {
-    if (status === "error") {
-      notifications.show({
-        color: "red",
-        title: "OCRに失敗しました",
-        message: error ?? "解析中にエラーが発生しました",
-      });
-    }
-  }, [status, error]);
-
-  const detailsFromTotal = (t?: number): AllowanceDetail[] => {
-    if (!t || !Number.isFinite(t)) {
-      return [];
-    }
-    return [{ name: "レシート", amount: t }];
-  };
+  const [status, setStatus] = useState<"idle" | "running">("idle");
 
   const onSelectReceipt = async (file: File) => {
-    await run(file);
-    if (!text || text.trim().length === 0) {
-      return;
-    }
-    const parsed = parseReceiptText(text);
-    const nextDetails = parsed.rows.length > 0 ? parsed.rows : detailsFromTotal(parsed.total);
-    onOcrPrefill({ details: nextDetails, total: parsed.total, titleHint: parsed.titleHint });
-    reset();
+    setStatus("running");
+
+    postReceipt(file)
+      .then((res) => {
+        if (!res.items || res.items.length == 0) {
+          notifications.show({
+            color: "yellow",
+            title: "OCR結果",
+            message: "明細が見つかりません",
+          });
+          return;
+        }
+
+        onOcrPrefill(res);
+      })
+      .catch((err) => {
+        notifications.show({ color: "red", title: "OCRエラー", message: `${err}` });
+      })
+      .finally(() => {
+        setStatus("idle");
+      });
   };
 
   return (
@@ -100,7 +82,6 @@ export const AllowanceDetailsModal = ({
           {status === "running" && (
             <Group align="center">
               <Loader size="sm" />
-              <Progress value={Math.round(progress * 100)} style={{ flex: 1 }} />
             </Group>
           )}
 

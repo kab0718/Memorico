@@ -30,6 +30,16 @@ interface Result {
   Label: string;
 }
 
+export interface ReceiptResult {
+  storeName?: string;
+  items: ReceiptItem[];
+}
+
+interface ReceiptItem {
+  name?: string;
+  amount?: number;
+}
+
 export interface DetailJsonBody {
   trip: TripFormData;
   images: ImageFormData[];

@@ -5,6 +5,7 @@ import { AllowanceSummary } from "../molecules/AllowanceSummary";
 import { AllowanceDetailsModal } from "../molecules/AllowanceDetailsModal";
 import { css } from "@emotion/react";
 import { IconVocabulary } from "@tabler/icons-react";
+import { ReceiptResult } from "../../api/types";
 
 interface Props {
   value?: Allowance[];
@@ -114,16 +115,12 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     onChange(updated);
   };
 
-  const handleOcrPrefill = (payload: {
-    details: AllowanceDetail[];
-    total?: number;
-    titleHint?: string;
-  }) => {
-    if (payload.details && payload.details.length > 0) {
-      setDetails(payload.details);
+  const handleOcrPrefill = (payload: ReceiptResult) => {
+    if (payload.items && payload.items.length > 0) {
+      setDetails(payload.items.map((it) => ({ name: it.name ?? "", amount: it.amount ?? 0 })));
     }
-    if (payload.titleHint && title.trim().length === 0) {
-      setTitle(payload.titleHint);
+    if (payload.storeName && title.trim().length === 0) {
+      setTitle(payload.storeName);
     }
   };
 

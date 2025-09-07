@@ -1,6 +1,6 @@
 import type { ImageAsset } from "../types/imageAsset";
 import type { TripFormValues } from "../types/tripFormValues";
-import { post } from "./http";
+import { binaryPost } from "./http";
 import { DetailJsonBody, ImageFormData } from "./types";
 
 const genUuid = (): string => {
@@ -48,5 +48,5 @@ export async function postImagesAndJson(
   form.append("detailJson", jsonBlob, "detail.json");
 
   // 既存のHTTPユーティリティを利用して送信（Content-Typeはmultipartを指定し、内部で削除してboundaryをブラウザに任せる）
-  return post("", { "Content-Type": "multipart/form-data" }, form);
+  return binaryPost("", { "Content-Type": "multipart/form-data" }, form);
 }
