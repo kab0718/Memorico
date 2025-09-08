@@ -113,7 +113,7 @@ export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) =
 const dateStyle = css`
   font-size: clamp(10px, 0.45vw + 10px, 13px);
   line-height: 1.6;
-`
+`;
 
 const shootingMessageStyle = css`
   margin-left: 6px;
@@ -126,4 +126,4 @@ const placeInputStyle = css`
   .mantine-Input-input {
     font-size: clamp(10px, 0.45vw + 10px, 14px);
   }
-`
+`;

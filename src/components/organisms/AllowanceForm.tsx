@@ -132,9 +132,7 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
             <ThemeIcon size={40} variant="white">
               <IconVocabulary size={80} />
             </ThemeIcon>
-            <div css={noDataTextStyle}>
-              出費が登録されていません
-            </div>
+            <div css={noDataTextStyle}>出費が登録されていません</div>
           </Stack>
         )}
 
@@ -184,4 +182,4 @@ const addButtonStyle = css`
 
 const noDataTextStyle = css`
   font-weight: 600;
-`
+`;
