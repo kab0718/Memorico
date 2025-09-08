@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Stack, Text, ThemeIcon } from "@mantine/core";
+import { Button, Stack, ThemeIcon } from "@mantine/core";
 import { Allowance, AllowanceDetail } from "../../types/allowance";
 import { AllowanceSummary } from "../molecules/AllowanceSummary";
 import { AllowanceDetailsModal } from "../molecules/AllowanceDetailsModal";
@@ -132,9 +132,9 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
             <ThemeIcon size={40} variant="white">
               <IconVocabulary size={80} />
             </ThemeIcon>
-            <Text fw={900} ta="center">
+            <div css={noDataTextStyle}>
               出費が登録されていません
-            </Text>
+            </div>
           </Stack>
         )}
 
@@ -181,3 +181,7 @@ const summaryGroupStyle = css`
 const addButtonStyle = css`
   max-width: 300px;
 `;
+
+const noDataTextStyle = css`
+  font-weight: 600;
+`

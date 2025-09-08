@@ -69,11 +69,11 @@ export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) =
   const ShootingDate = (props: { dateTime?: Date }) => {
     const message = props.dateTime ? formatDateTime(props.dateTime) : "不明";
     return (
-      <Text size="sm">
+      <div css={dateStyle}>
         撮影日時
         <br />
         <div css={shootingMessageStyle}>{message}</div>
-      </Text>
+      </div>
     );
   };
 
@@ -87,6 +87,7 @@ export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) =
           size="xs"
           value={placeName}
           onChange={(e) => onPlaceNameChange(e.currentTarget.value)}
+          css={placeInputStyle}
         />
       </Stack>
     );
@@ -103,11 +104,26 @@ export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) =
         onChange={(e) => onPlaceNameChange(e.currentTarget.value)}
         rightSection={loading ? <Loader size="xs" /> : undefined}
         description={loading ? "位置情報から場所名を取得中…" : undefined}
+        css={placeInputStyle}
       />
     </Stack>
   );
 };
 
+const dateStyle = css`
+  font-size: clamp(10px, 0.45vw + 10px, 13px);
+  line-height: 1.6;
+`
+
 const shootingMessageStyle = css`
   margin-left: 6px;
 `;
+
+const placeInputStyle = css`
+  .mantine-InputWrapper-label {
+    font-size: clamp(10px, 0.35vw + 10px, 13px);
+  }
+  .mantine-Input-input {
+    font-size: clamp(10px, 0.45vw + 10px, 14px);
+  }
+`
