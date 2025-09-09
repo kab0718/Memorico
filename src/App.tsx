@@ -15,6 +15,7 @@ export const App = () => {
   const [active, setActive] = useState<number>(0);
   const [images, setImages] = useState<ImageAsset[]>([]);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [isLandmarkLoading, setIsLandmarkLoading] = useState<boolean>(false);
 
   const form = useForm<TripFormValues>({
     initialValues: {
@@ -57,7 +58,7 @@ export const App = () => {
       .catch((err) => {
         console.error("Error", err);
         alert("エラーが発生しました。初めからやり直してください。");
-        setActive(1);
+        setActive(0);
       });
   };
 
@@ -68,10 +69,14 @@ export const App = () => {
         {active === 0 && (
           <>
             <StepCard label="旅の思い出をアップロード">
-              <ImageUploadGallery value={images} onChange={setImages} />
+              <ImageUploadGallery
+                value={images}
+                onChange={setImages}
+                onLandmarkLoadingChange={setIsLandmarkLoading}
+              />
             </StepCard>
             <Group justify="flex-end" mt="xl">
-              <NextButton onClick={next} disabled={images.length === 0} />
+              <NextButton onClick={next} disabled={images.length === 0 || isLandmarkLoading} />
             </Group>
           </>
         )}

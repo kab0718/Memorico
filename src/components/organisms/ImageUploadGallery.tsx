@@ -11,15 +11,17 @@ import { ImageAsset } from "../../types/imageAsset";
 interface Props {
   onChange: (images: ImageAsset[]) => void;
   value: ImageAsset[];
+  onLandmarkLoadingChange: (loading: boolean) => void;
 }
 
-export const ImageUploadGallery = ({ onChange, value }: Props) => {
+export const ImageUploadGallery = ({ onChange, value, onLandmarkLoadingChange }: Props) => {
   const accept = ["image/*"];
   const maxSize = 50 * 1024 * 1024; // 50MB
 
   const [images, setImages] = useState<ImageAsset[]>(value);
   const [exifMap, setExifMap] = useState<Record<string, MediaExif>>({});
   const [placeMap, setPlaceMap] = useState<Record<string, string>>({});
+  const [landmarkLoadingMap, setLandmarkLoadingMap] = useState<Record<string, boolean>>({});
 
   // Sync from controlled value
   useEffect(() => {
@@ -128,6 +130,12 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [placeMap]);
 
+  // 子（ExifDetail）からのロード状態を集約して親へ伝える
+  useEffect(() => {
+    const anyLoading = Object.values(landmarkLoadingMap).some((v) => v);
+    onLandmarkLoadingChange(anyLoading);
+  }, [landmarkLoadingMap, onLandmarkLoadingChange]);
+
   const previews = useMemo(
     () =>
       images.map((image, idx) => {
@@ -143,6 +151,9 @@ export const ImageUploadGallery = ({ onChange, value }: Props) => {
                 mediaExif={exifMap[key]}
                 placeName={placeMap[key] ?? ""}
                 onPlaceNameChange={(v) => setPlaceMap((prev) => ({ ...prev, [key]: v }))}
+                onPlaceLoadingChange={(loading) =>
+                  setLandmarkLoadingMap((prev) => ({ ...prev, [key]: loading }))
+                }
               />
               <Group justify="flex-end" mt={6}>
                 <Button

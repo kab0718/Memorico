@@ -9,9 +9,15 @@ interface Props {
   mediaExif: MediaExif | undefined;
   placeName: string;
   onPlaceNameChange: (value: string) => void;
+  onPlaceLoadingChange: (loading: boolean) => void;
 }
 
-export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) => {
+export const ExifDetail = ({
+  mediaExif,
+  placeName,
+  onPlaceNameChange,
+  onPlaceLoadingChange,
+}: Props) => {
   const status = mediaExif?.status;
   const exif = mediaExif?.exif;
 
@@ -32,6 +38,7 @@ export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) =
 
     let aborted = false;
     setLoading(true);
+    onPlaceLoadingChange(true);
     fetchLandmarkData(lat, lon)
       .then((res) => {
         if (aborted) {
@@ -49,13 +56,14 @@ export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) =
           return;
         }
         setLoading(false);
+        onPlaceLoadingChange(false);
       });
 
     return () => {
       aborted = true;
     };
     // exifオブジェクト全体ではなく座標のみを依存にして無限再実行を防ぐ
-  }, [exif?.latitude, exif?.longitude, onPlaceNameChange, placeName]);
+  }, [exif?.latitude, exif?.longitude, onPlaceLoadingChange, onPlaceNameChange, placeName]);
 
   if (status !== "ok") {
     const message = status === "pending" ? "EXIF解析中…" : "EXIF解析失敗";
@@ -87,6 +95,8 @@ export const ExifDetail = ({ mediaExif, placeName, onPlaceNameChange }: Props) =
           size="xs"
           value={placeName}
           onChange={(e) => onPlaceNameChange(e.currentTarget.value)}
+          rightSection={loading ? <Loader size="xs" /> : undefined}
+          description={loading ? "位置情報から場所名を取得中…" : undefined}
           css={placeInputStyle}
         />
       </Stack>
