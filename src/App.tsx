@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Title, Button, Group, Center, Loader, Stack, Paper } from "@mantine/core";
+import { Title, Button, Group, Center, Loader, Stack, Paper, Text } from "@mantine/core";
 import { ImageUploadGallery } from "./components/organisms/ImageUploadGallery";
 import { TripForm } from "./components/organisms/TripForm";
 import { GenerateResult } from "./components/organisms/GenerateResult";
@@ -113,6 +113,9 @@ export const App = () => {
             <Stack align="center" gap="sm">
               <Loader size="lg" />
               <Title order={4}>しおりを生成しています…</Title>
+              <Text size="sm" c="dimmed">
+                3分ほど時間がかかります
+              </Text>
             </Stack>
           </Center>
         )}

@@ -32,17 +32,14 @@ const openPdf = (pdfBlob: Blob): void => {
     pdfBlob.type === "application/pdf" ? pdfBlob : new Blob([pdfBlob], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
 
-  // 新規タブで開く（ユーザー操作内で呼ぶ）
-  const win = window.open(url, "_blank", "noopener,noreferrer");
-
-  // 開けなかった場合のフォールバック（アンカークリック）
-  if (!win) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.click();
-  }
+  // アンカークリックで新規タブを安定して開く（各ブラウザで二重起動を避ける）
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 
   // メモリ解放
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
