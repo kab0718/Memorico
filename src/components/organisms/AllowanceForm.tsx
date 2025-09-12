@@ -25,8 +25,8 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     setSummaries(value);
   }, [value]);
 
-  const setItem = (idx: number, item: string) => {
-    setDetails((prev) => prev.map((r, i) => (i === idx ? { ...r, name: item } : r)));
+  const setName = (idx: number, name: string) => {
+    setDetails((prev) => prev.map((r, i) => (i === idx ? { ...r, name } : r)));
   };
 
   const setAmount = (idx: number, amount: number) => {
@@ -46,7 +46,7 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
   const openForEdit = (idx: number) => {
     const target = summaries[idx];
     const rows: AllowanceDetail[] = (target.details || []).map((d) => ({
-      item: d.name ?? "",
+      name: d.name ?? "",
       amount: d.amount,
     }));
     setDetails(rows.length ? rows : [defaultRow]);
@@ -73,7 +73,7 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     }
 
     const normalized: AllowanceDetail[] = details.map((r) => ({
-      item: r.name?.trim(),
+      name: r.name?.trim(),
       amount: Number(r.amount),
     }));
     const next: Allowance = { total: sum, title: title.trim(), details: normalized };
@@ -95,7 +95,7 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
     }
 
     const normalized: AllowanceDetail[] = details.map((r) => ({
-      item: r.name?.trim(),
+      name: r.name?.trim(),
       amount: Number(r.amount),
     }));
     const next: Allowance = { total: sum, title: title.trim(), details: normalized };
@@ -158,7 +158,7 @@ export const AllowanceForm = ({ value = [], onChange }: Props) => {
         onClose={() => setOpened(false)}
         onAddRow={addRow}
         onRemoveRow={removeRow}
-        onChangeItem={setItem}
+        onChangeName={setName}
         onChangeAmount={setAmount}
         onChangeTitle={setTitle}
         onSave={handleSave}

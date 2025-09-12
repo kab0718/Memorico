@@ -17,7 +17,7 @@ interface Props {
   onClose: () => void;
   onAddRow: () => void;
   onRemoveRow: (index: number) => void;
-  onChangeItem: (index: number, value: string) => void;
+  onChangeName: (index: number, value: string) => void;
   onChangeAmount: (index: number, value: number) => void;
   onChangeTitle: (value: string) => void;
   onSave: () => void;
@@ -33,7 +33,7 @@ export const AllowanceDetailsModal = ({
   onClose,
   onAddRow,
   onRemoveRow,
-  onChangeItem,
+  onChangeName,
   onChangeAmount,
   onChangeTitle,
   onSave,
@@ -89,7 +89,7 @@ export const AllowanceDetailsModal = ({
               key={idx}
               index={idx}
               row={row}
-              onChangeItem={onChangeItem}
+              onChangeName={onChangeName}
               onChangeAmount={onChangeAmount}
               onRemove={onRemoveRow}
               canRemove={(details.length || 1) > 1}

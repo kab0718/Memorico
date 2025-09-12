@@ -6,7 +6,7 @@ import { AllowanceDetail } from "../../types/allowance";
 interface Props {
   index: number;
   row: AllowanceDetail;
-  onChangeItem: (index: number, value: string) => void;
+  onChangeName: (index: number, value: string) => void;
   onChangeAmount: (index: number, value: number) => void;
   onRemove: (index: number) => void;
   canRemove: boolean;
@@ -15,7 +15,7 @@ interface Props {
 export const AllowanceDetailRow = ({
   index,
   row,
-  onChangeItem,
+  onChangeName,
   onChangeAmount,
   onRemove,
   canRemove,
@@ -25,9 +25,9 @@ export const AllowanceDetailRow = ({
       <TextInput
         label="商品名"
         placeholder="例: ジュース"
-        css={itemInputStyle}
+        css={nameInputStyle}
         value={row.name}
-        onChange={(e) => onChangeItem(index, e.currentTarget.value)}
+        onChange={(e) => onChangeName(index, e.currentTarget.value)}
       />
       <NumericTextInput
         label="金額（円）"
@@ -44,7 +44,7 @@ export const AllowanceDetailRow = ({
   );
 };
 
-const itemInputStyle = css`
+const nameInputStyle = css`
   min-width: 160px;
   flex: 2;
 `;
