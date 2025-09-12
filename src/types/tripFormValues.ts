@@ -12,5 +12,14 @@ export interface TripFormValues {
 
 interface Member {
   name: string;
+  role?: MemberRole;
   episode?: string;
 }
+
+export type MemberRole =
+  | "leader"
+  | "camera"
+  | "accountant"
+  | "navigator"
+  | "driver"
+  | "reservation";

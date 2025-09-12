@@ -1,9 +1,18 @@
-import { Button, Group, Stack, TextInput, Textarea, Divider, Checkbox } from "@mantine/core";
+import {
+  Button,
+  Group,
+  Stack,
+  TextInput,
+  Textarea,
+  Divider,
+  Checkbox,
+  Select,
+} from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import "dayjs/locale/ja";
 import type { UseFormReturnType } from "@mantine/form";
 import { css } from "@emotion/react";
-import { TripFormValues } from "../../types/tripFormValues";
+import { TripFormValues, MemberRole } from "../../types/tripFormValues";
 
 export interface TripFormProps {
   form: UseFormReturnType<TripFormValues>;
@@ -15,6 +24,15 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
   const removeMember = (index: number) => form.removeListItem("members", index);
   const addHotel = () => form.insertListItem("hotels", "");
   const removeHotel = (index: number) => form.removeListItem("hotels", index);
+
+  const roleOptions: { value: MemberRole; label: string }[] = [
+    { value: "leader", label: "リーダー" },
+    { value: "camera", label: "運転" },
+    { value: "accountant", label: "カメラ" },
+    { value: "navigator", label: "会計" },
+    { value: "driver", label: "ナビ" },
+    { value: "reservation", label: "予約" },
+  ];
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)} noValidate>
@@ -114,6 +132,13 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
                 css={memberNameInputStyle}
                 {...form.getInputProps(`members.${idx}.name`)}
               />
+              <Select
+                label="役割"
+                css={roleSelectStyle(!!form.errors[`members.${idx}.name`])}
+                data={roleOptions}
+                clearable
+                {...form.getInputProps(`members.${idx}.role`)}
+              />
               <TextInput
                 label="エピソード"
                 placeholder="運転してくれた"
@@ -167,5 +192,10 @@ const memberNameInputStyle = css`
 const episodeInputStyle = (isError: boolean) => css`
   min-width: 200px;
   flex: 2;
+  margin-bottom: ${isError ? "19px" : "0"};
+`;
+
+const roleSelectStyle = (isError: boolean) => css`
+  max-width: 130px;
   margin-bottom: ${isError ? "19px" : "0"};
 `;
