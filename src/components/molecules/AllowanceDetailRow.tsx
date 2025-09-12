@@ -10,6 +10,7 @@ interface Props {
   onChangeAmount: (index: number, value: number) => void;
   onRemove: (index: number) => void;
   canRemove: boolean;
+  disabled?: boolean;
 }
 
 export const AllowanceDetailRow = ({
@@ -19,6 +20,7 @@ export const AllowanceDetailRow = ({
   onChangeAmount,
   onRemove,
   canRemove,
+  disabled = false,
 }: Props) => {
   return (
     <Group align="flex-end" wrap="wrap">
@@ -27,6 +29,7 @@ export const AllowanceDetailRow = ({
         placeholder="例: ジュース"
         css={nameInputStyle}
         value={row.name}
+        disabled={disabled}
         onChange={(e) => onChangeName(index, e.currentTarget.value)}
       />
       <NumericTextInput
@@ -35,9 +38,15 @@ export const AllowanceDetailRow = ({
         value={row.amount}
         placeholder="例: 120"
         withAsterisk
+        disabled={disabled}
         onChange={(v) => onChangeAmount(index, v)}
       />
-      <Button variant="light" color="red" onClick={() => onRemove(index)} disabled={!canRemove}>
+      <Button
+        variant="light"
+        color="red"
+        onClick={() => onRemove(index)}
+        disabled={!canRemove || disabled}
+      >
         削除
       </Button>
     </Group>

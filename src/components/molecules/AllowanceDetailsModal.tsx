@@ -42,6 +42,7 @@ export const AllowanceDetailsModal = ({
 }: Props) => {
   const saveDisabled = total < 1 || title.trim().length === 0;
   const [status, setStatus] = useState<"idle" | "running">("idle");
+  const disabled = status === "running";
 
   const onSelectReceipt = async (file: File) => {
     setStatus("running");
@@ -93,12 +94,13 @@ export const AllowanceDetailsModal = ({
               onChangeAmount={onChangeAmount}
               onRemove={onRemoveRow}
               canRemove={(details.length || 1) > 1}
+              disabled={disabled}
             />
           ))}
 
           <Group>
-            <ReceiptImportButton onSelect={onSelectReceipt} />
-            <Button variant="light" onClick={onAddRow}>
+            <ReceiptImportButton onSelect={onSelectReceipt} disabled={disabled} />
+            <Button variant="light" onClick={onAddRow} disabled={disabled}>
               行を追加
             </Button>
           </Group>
@@ -112,6 +114,7 @@ export const AllowanceDetailsModal = ({
               withAsterisk
               css={titleInputStyle}
               value={title}
+              disabled={disabled}
               onChange={(e) => onChangeTitle(e.currentTarget.value)}
             />
             <Stack gap={2} align="flex-end">
@@ -127,10 +130,10 @@ export const AllowanceDetailsModal = ({
           <Button variant="subtle" onClick={onClose}>
             キャンセル
           </Button>
-          <Button variant="light" onClick={onSaveAndContinue} disabled={saveDisabled}>
+          <Button variant="light" onClick={onSaveAndContinue} disabled={saveDisabled || disabled}>
             繰り返し作成
           </Button>
-          <Button color="blue" onClick={onSave} disabled={saveDisabled}>
+          <Button color="blue" onClick={onSave} disabled={saveDisabled || disabled}>
             確認して保存
           </Button>
         </Group>

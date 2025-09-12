@@ -47,10 +47,6 @@ export async function postImagesAndJson(
   });
   form.append("detailJson", jsonBlob, "detail.json");
 
-  console.log("Posting form image:", form.getAll("images"));
-  console.log("Posting detailJson:", detailJson);
-  console.log("Posting detailJson blob:", form.getAll("detailJson"));
-
   // 既存のHTTPユーティリティを利用して送信（Content-Typeはmultipartを指定し、内部で削除してboundaryをブラウザに任せる）
   return binaryPost("", { "Content-Type": "multipart/form-data" }, form);
 }

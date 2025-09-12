@@ -3,12 +3,16 @@ import { Button } from "@mantine/core";
 
 interface Props {
   onSelect: (file: File) => void;
+  disabled?: boolean;
 }
 
-export const ReceiptImportButton = ({ onSelect }: Props) => {
+export const ReceiptImportButton = ({ onSelect, disabled = false }: Props) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleClick = (): void => {
+    if (disabled) {
+      return;
+    }
     inputRef.current?.click();
   };
 
@@ -28,7 +32,7 @@ export const ReceiptImportButton = ({ onSelect }: Props) => {
 
   return (
     <>
-      <Button variant="light" onClick={handleClick}>
+      <Button variant="light" onClick={handleClick} disabled={disabled}>
         レシート読み込み
       </Button>
       <input
