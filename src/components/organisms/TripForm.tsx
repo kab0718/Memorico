@@ -27,10 +27,10 @@ export const TripForm = ({ form, onSubmit }: TripFormProps) => {
 
   const roleOptions: { value: MemberRole; label: string }[] = [
     { value: "leader", label: "リーダー" },
-    { value: "camera", label: "運転" },
-    { value: "accountant", label: "カメラ" },
-    { value: "navigator", label: "会計" },
-    { value: "driver", label: "ナビ" },
+    { value: "camera", label: "カメラ" },
+    { value: "accountant", label: "会計" },
+    { value: "navigator", label: "ナビ" },
+    { value: "driver", label: "運転" },
     { value: "reservation", label: "予約" },
   ];
 
