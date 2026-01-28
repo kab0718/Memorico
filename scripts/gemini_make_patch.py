@@ -4,22 +4,19 @@ from __future__ import annotations
 import json
 import os
 import re
-import subprocess
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Tuple
 
 import requests
 
 API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 TASK = os.environ.get("TASK", "").strip()
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 if not API_KEY:
     raise SystemExit("GEMINI_API_KEY is missing")
 if not TASK:
     raise SystemExit("TASK is missing")
-
-# Cheap/fast model for PoC. If Google changes model names, switch to a current Flash model.
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 ENDPOINT = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
@@ -27,79 +24,25 @@ ENDPOINT = (
 )
 
 ARTIFACTS_DIR = Path("artifacts")
-PATCH_PATH = ARTIFACTS_DIR / "ai.patch"
+ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def run(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, check=check, text=True, capture_output=False)
-
-
-def read_text(path: Path, limit: int = 12000) -> str:
-    txt = path.read_text(encoding="utf-8", errors="replace")
-    if len(txt) > limit:
-        return txt[:limit] + "\n/* truncated */\n"
-    return txt
-
-
-def list_candidate_files(repo_root: Path) -> List[str]:
-    out: List[str] = []
-
-    skip_dirs = {"node_modules", "dist", ".git", ".next", ".turbo", "build", ".cache"}
-    allow_ext = {".ts", ".tsx", ".md", ".json", ".css", ".scss", ".yml", ".yaml"}
-
-    for p in repo_root.rglob("*"):
-        if p.is_dir():
-            # rglob doesn't allow pruning directly, so skip by continuing on files only.
-            continue
-
-        parts = set(p.parts)
-        if parts & skip_dirs:
-            continue
-
-        if p.name in {"package-lock.json", "yarn.lock", "pnpm-lock.yaml"}:
-            continue
-
-        # Keep prompt small: focus on src + a few top-level config/docs.
-        if p.parts[0] == "src":
-            if p.suffix in allow_ext or p.name in {"index.html"}:
-                out.append(str(p.as_posix()))
-            continue
-
-        if p.name in {"package.json", "README.md", "tsconfig.json", "vite.config.ts"}:
-            out.append(str(p.as_posix()))
-            continue
-
-        # Allow a small number of config files if needed
-        if p.suffix in {".yml", ".yaml"} and ".github/workflows" not in p.as_posix():
-            out.append(str(p.as_posix()))
-            continue
-
-    return out[:800]
-
-
-def gemini_generate(system: str, user: str, max_output_tokens: int = 2400) -> str:
+def gemini_generate(system: str, user: str, max_output_tokens: int = 4000) -> str:
     body = {
-        "contents": [
-            {
-                "role": "user",
-                "parts": [{"text": f"{system}\n\n{user}"}],
-            }
-        ],
+        "contents": [{"role": "user", "parts": [{"text": f"{system}\n\n{user}"}]}],
         "generationConfig": {
             "temperature": 0.2,
             "maxOutputTokens": max_output_tokens,
         },
     }
-
     res = requests.post(
         ENDPOINT,
         headers={"Content-Type": "application/json"},
         data=json.dumps(body),
-        timeout=120,
+        timeout=180,
     )
     if not res.ok:
         raise RuntimeError(f"Gemini API error: {res.status_code} {res.text}")
-
     data = res.json()
     parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
     text = "".join(p.get("text", "") for p in parts)
@@ -108,134 +51,182 @@ def gemini_generate(system: str, user: str, max_output_tokens: int = 2400) -> st
     return text
 
 
-def extract_json_object(text: str) -> Dict[str, Any] | None:
-    # Try parse first JSON object in text
-    start = text.find("{")
-    end = text.rfind("}")
+def list_repo_files(limit: int = 1200) -> List[str]:
+    """List repo files to help the model choose what to edit."""
+    skip_dirs = {".git", "node_modules", "dist", "build", ".next", ".turbo", ".cache"}
+    out: List[str] = []
+    for p in Path(".").rglob("*"):
+        if p.is_dir():
+            continue
+        if any(part in skip_dirs for part in p.parts):
+            continue
+        # keep list manageable
+        out.append(p.as_posix())
+        if len(out) >= limit:
+            break
+    return out
+
+
+def read_file_for_context(path: str, limit: int = 16000) -> str:
+    p = Path(path)
+    if not p.exists() or p.is_dir():
+        return ""
+    txt = p.read_text(encoding="utf-8", errors="replace")
+    if len(txt) > limit:
+        return txt[:limit] + "\n/* truncated */\n"
+    return txt
+
+
+def extract_json(text: str) -> Dict[str, Any]:
+    # Prefer fenced json
+    m = re.search(r"```json\s*([\s\S]*?)```", text)
+    candidate = m.group(1).strip() if m else text.strip()
+
+    # Try parse raw
+    try:
+        return json.loads(candidate)
+    except Exception:
+        pass
+
+    # Try find first {...} block
+    start = candidate.find("{")
+    end = candidate.rfind("}")
     if start >= 0 and end > start:
-        snippet = text[start : end + 1]
-        try:
-            return json.loads(snippet)
-        except Exception:
-            return None
-    return None
+        snippet = candidate[start : end + 1]
+        return json.loads(snippet)
+
+    raise RuntimeError("Could not parse JSON from Gemini output")
 
 
-def extract_diff(text: str) -> str:
-    # Prefer fenced diff
-    m = re.search(r"```diff\s*([\s\S]*?)```", text)
-    if m:
-        candidate = m.group(1).strip()
-    else:
-        candidate = text.strip()
+def sanitize_path(path: str) -> str:
+    # prevent directory traversal; keep it repo-relative
+    path = path.strip().lstrip("/")
 
-    idx = candidate.find("diff --git")
-    if idx >= 0:
-        return candidate[idx:].strip()
+    # normalize and reject traversal
+    norm = Path(path)
+    if ".." in norm.parts:
+        raise RuntimeError(f"Path traversal is not allowed: {path}")
 
-    # Sometimes the model returns a patch without 'diff --git' -> reject
-    raise RuntimeError("Invalid patch: missing 'diff --git' header.")
+    return norm.as_posix()
+
+
+def apply_files(files: List[Dict[str, Any]]) -> Tuple[int, List[str]]:
+    changed: List[str] = []
+    count = 0
+
+    # very light guardrails to avoid ridiculous output
+    if len(files) > 25:
+        raise RuntimeError(f"Too many files in output: {len(files)} (max 25)")
+
+    for f in files:
+        if not isinstance(f, dict):
+            continue
+        path = f.get("path")
+        content = f.get("content")
+        if not isinstance(path, str) or not isinstance(content, str):
+            continue
+
+        path = sanitize_path(path)
+
+        # avoid touching .git and workflow stuff even in "free" mode
+        if path.startswith(".git/") or path.startswith(".github/workflows/"):
+            continue
+
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+
+        # size cap to avoid accidental mega writes
+        if len(content) > 200_000:
+            raise RuntimeError(f"File too large: {path} ({len(content)} bytes)")
+
+        old = p.read_text(encoding="utf-8", errors="replace") if p.exists() else None
+        new = content.rstrip("\n") + "\n"
+
+        if old != new:
+            p.write_text(new, encoding="utf-8")
+            changed.append(path)
+            count += 1
+
+    return count, changed
 
 
 def main() -> None:
-    repo_root = Path(".")
-    files = list_candidate_files(repo_root)
-
+    all_files = list_repo_files()
+    # Ask model to choose up to 8 files to read
     system_pick = """\
-You are a senior software engineer working on a Vite+React+TypeScript project.
-Select up to 8 relevant existing files to read before proposing a patch.
-Return ONLY JSON with this schema:
-{
-	"files": ["path1","path2",...],
-	"notes": "short"
-}
+Pick up to 8 relevant files to edit for the given TASK.
+Return ONLY JSON:
+{"files":["path1","path2",...], "notes":"short"}
 Rules:
-- Only choose from the provided file list.
-- Prefer minimal set.
-- Do not include node_modules, dist, lockfiles, or .github/workflows.
+- Only pick from the provided file list.
+- Keep it small.
 """.strip()
 
-    user_pick = f"""\
-TASK:
-{TASK}
+    user_pick = f"TASK:\n{TASK}\n\nFILES:\n" + "\n".join(all_files)
+    pick_raw = gemini_generate(system_pick, user_pick, max_output_tokens=800)
+    pick_json = extract_json(pick_raw)
 
-AVAILABLE FILES (choose from):
-{chr(10).join(files)}
-""".strip()
-
-    pick_raw = gemini_generate(system_pick, user_pick, max_output_tokens=600)
-    pick = extract_json_object(pick_raw) or {"files": ["package.json", "README.md"], "notes": "fallback"}
-    selected = pick.get("files") if isinstance(pick, dict) else None
+    selected = pick_json.get("files", [])
     if not isinstance(selected, list) or not selected:
-        selected = ["package.json", "README.md"]
-    selected = [str(x) for x in selected[:8] if isinstance(x, str)]
+        selected = ["README.md", "package.json"]
 
-    context_chunks: List[str] = []
-    for f in selected:
-        p = Path(f)
-        if not p.exists() or p.is_dir():
+    selected = [s for s in selected[:8] if isinstance(s, str)]
+    context_parts: List[str] = []
+    for s in selected:
+        s2 = s.strip()
+        if not s2:
             continue
-        txt = read_text(p)
-        context_chunks.append(f"--- file: {p.as_posix()}\n{txt}")
+        content = read_file_for_context(s2)
+        if content:
+            context_parts.append(f"--- file: {s2}\n{content}")
 
-    system_diff = """\
-Output a SINGLE git-style unified diff that is directly applyable via `git apply`.
-Hard requirements:
-- The output MUST start with a line like: diff --git a/<path> b/<path>
-- Do NOT wrap the diff in markdown fences (no ```diff).
-- Include complete file headers for new files: diff --git ... + new file mode 100644 + index ... + --- /dev/null + +++ b/<path>
-- Use repo-root relative paths with forward slashes (/).
-- Do NOT change lockfiles and do NOT modify .github/workflows.
-- Keep changes minimal and directly related to the TASK.
-- Do NOT add new files. Only modify existing files.
+    # Now generate "files to write" as JSON
+    system_gen = """\
+You are editing an existing codebase.
+Output ONLY JSON in this schema:
+{
+  "files": [
+    {"path": "relative/path/to/file", "content": "complete new file content"},
+    ...
+  ],
+  "summary": "what you changed"
+}
+
+Rules:
+- "content" must be the COMPLETE file content (not a diff).
+- Use forward slashes (/) in paths.
+- Keep changes focused on TASK.
+- Do not include markdown outside JSON.
 """.strip()
 
-    user_diff = f"""\
+    user_gen = f"""\
 TASK:
 {TASK}
 
-FILES YOU CAN EDIT (from context; you may also add new TS/TSX files under src/ if needed):
-{chr(10).join(context_chunks)}
+CONTEXT FILES:
+{chr(10).join(context_parts)}
 """.strip()
 
-    diff_raw = gemini_generate(system_diff, user_diff, max_output_tokens=2400)
-    diff_text = extract_diff(diff_raw)
+    gen_raw = gemini_generate(system_gen, user_gen, max_output_tokens=4000)
 
-    ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
-    PATCH_PATH.write_text(diff_text + "\n", encoding="utf-8")
+    # Save raw output for debugging
+    (ARTIFACTS_DIR / "gemini_raw.txt").write_text(gen_raw, encoding="utf-8")
 
-    # Apply patch
-    try:
-        # まずチェックだけ（これが一番情報を出してくれる）
-        subprocess.run(
-            ["git", "apply", "--check", str(PATCH_PATH)],
-            check=True,
-            text=True,
-            capture_output=True,
-        )
-    except subprocess.CalledProcessError as e:
-        print("\n--- git apply --check failed ---\n")
-        print("STDOUT:\n", e.stdout or "")
-        print("STDERR:\n", e.stderr or "")
-        print("\n--- Generated patch ---\n")
-        print(PATCH_PATH.read_text(encoding="utf-8", errors="replace"))
-        raise
+    out = extract_json(gen_raw)
+    files = out.get("files", [])
+    if not isinstance(files, list) or not files:
+        raise RuntimeError("Gemini returned no files to write")
 
-    try:
-        subprocess.run(
-            ["git", "apply", "--whitespace=fix", str(PATCH_PATH)],
-            check=True,
-            text=True,
-            capture_output=True,
-        )
-    except subprocess.CalledProcessError as e:
-        print("\n--- git apply failed ---\n")
-        print("STDOUT:\n", e.stdout or "")
-        print("STDERR:\n", e.stderr or "")
-        print("\n--- Generated patch ---\n")
-        print(PATCH_PATH.read_text(encoding="utf-8", errors="replace"))
-        raise
+    count, changed = apply_files(files)
 
+    (ARTIFACTS_DIR / "changed_files.json").write_text(
+        json.dumps({"count": count, "changed": changed, "summary": out.get("summary", "")}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    print(f"Applied changes to {count} file(s).")
+    for p in changed:
+        print(f"- {p}")
 
 
 if __name__ == "__main__":

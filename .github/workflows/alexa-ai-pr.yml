@@ -58,7 +58,7 @@ jobs:
           echo "BRANCH=$BR" >> $GITHUB_ENV
           git checkout -b "$BR"
 
-      - name: Generate patch with Gemini and apply
+      - name: Generate patch with Gemini and
         run: python scripts/gemini_make_patch.py
 
       - name: Format (optional but recommended)
