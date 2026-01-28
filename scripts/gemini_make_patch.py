@@ -171,7 +171,7 @@ def apply_files(files: List[Dict[str, Any]]) -> Tuple[int, List[str]]:
         path = sanitize_path(path)
 
         # Avoid touching git internals / workflows even in "free" mode
-        if path.startswith(".git/") or path.startswith(".github/workflows/"):
+        if path.startswith(".git/") or path.startswith(".github/"):
             continue
 
         p = Path(path)
@@ -251,6 +251,8 @@ Rules:
 - Keep changes focused on TASK.
 - Do not include markdown outside JSON.
 - files should contain at least ONE entry; if you think no changes are needed, still return one relevant file with its current content.
+- You MUST make an actual change to the repository based on TASK. Do not return unchanged files.
+- Prefer editing existing files under src/ (e.g., App.tsx, main.tsx, or styles).
 """.strip()
 
     user_gen = f"""\
