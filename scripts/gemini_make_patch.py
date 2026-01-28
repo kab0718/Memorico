@@ -189,8 +189,13 @@ Rules:
 
     user_pick = f"TASK:\n{TASK}\n\nFILES:\n" + "\n".join(all_files)
     pick_raw = gemini_generate(system_pick, user_pick, max_output_tokens=800)
-    pick_json = extract_json(pick_raw)
 
+    try:
+        pick_json = extract_json(pick_raw)
+    except Exception:
+        # pickは失敗しても良い。とりあえず動かす。
+        pick_json = {"files": ["README.md", "package.json"], "notes": "fallback: pick parse failed"}
+    
     selected = pick_json.get("files", [])
     if not isinstance(selected, list) or not selected:
         selected = ["README.md", "package.json"]
