@@ -72,18 +72,27 @@ jobs:
       - name: Lint (fail if errors)
         run: npm run lint
 
+      - name: Debug changes before commit
+        run: |
+          set -euo pipefail
+          echo "## status"
+          git status --porcelain
+          echo "## diff stat"
+          git diff --stat || true
+
       - name: Commit changes (if any)
         run: |
           set -euo pipefail
 
-          # いったん安全のためクリーニング
-          rm -f .github/workflows/alexa-ai-pr.yml || true
+          # 1) workflowの変更は必ず捨てる（削除状態も復元）
+          git restore --staged --worktree .github/workflows 2>/dev/null || true
+          git checkout -- .github/workflows 2>/dev/null || true
 
-          # add から除外（workflow と artifacts をコミットしない）
+          # 2) artifacts はコミットしない
           git add -A
-          git reset -- .github/workflows || true
-          git reset -- artifacts || true
+          git reset -- artifacts 2>/dev/null || true
 
+          # 3) 変更がなければ終了
           if git diff --cached --quiet; then
             echo "DID_COMMIT=false" >> $GITHUB_ENV
             echo "No staged changes; exiting."
