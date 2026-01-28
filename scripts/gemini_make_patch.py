@@ -204,15 +204,36 @@ FILES YOU CAN EDIT (from context; you may also add new TS/TSX files under src/ i
 
     # Apply patch
     try:
+        # まずチェックだけ（これが一番情報を出してくれる）
+        subprocess.run(
+            ["git", "apply", "--check", str(PATCH_PATH)],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print("\n--- git apply --check failed ---\n")
+        print("STDOUT:\n", e.stdout or "")
+        print("STDERR:\n", e.stderr or "")
+        print("\n--- Generated patch ---\n")
+        print(PATCH_PATH.read_text(encoding="utf-8", errors="replace"))
+        raise
+
+    try:
         subprocess.run(
             ["git", "apply", "--whitespace=fix", str(PATCH_PATH)],
             check=True,
             text=True,
+            capture_output=True,
         )
-    except subprocess.CalledProcessError:
-        print("\n--- Failed patch (showing generated diff) ---\n")
-        print(diff_text)
+    except subprocess.CalledProcessError as e:
+        print("\n--- git apply failed ---\n")
+        print("STDOUT:\n", e.stdout or "")
+        print("STDERR:\n", e.stderr or "")
+        print("\n--- Generated patch ---\n")
+        print(PATCH_PATH.read_text(encoding="utf-8", errors="replace"))
         raise
+
 
 
 if __name__ == "__main__":
