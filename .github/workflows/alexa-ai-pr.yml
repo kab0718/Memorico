@@ -112,15 +112,13 @@ jobs:
           - Checks: \`npm run format\`, \`npm run lint\`
           EOF
 
-          PR_URL=$(gh pr create \
+          # 失敗したらここで落ちてログが出る
+          gh pr create \
             --base "${BASE_BRANCH}" \
             --head "${BRANCH}" \
             --title "${TITLE}" \
-            --body-file pr_body.md \
-            || true)
+            --body-file pr_body.md
 
-          echo "PR_URL=$PR_URL" >> "$GITHUB_ENV"
-          {
-            echo "### PR"
-            echo "$PR_URL"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "### PR" >> $GITHUB_STEP_SUMMARY
+          gh pr view --json url -q .url >> $GITHUB_STEP_SUMMARY
+
