@@ -125,14 +125,16 @@ def extract_diff(text: str) -> str:
     # Prefer fenced diff
     m = re.search(r"```diff\s*([\s\S]*?)```", text)
     if m:
-        return m.group(1).strip()
+        candidate = m.group(1).strip()
+    else:
+        candidate = text.strip()
 
-    # Or plain diff starting point
-    idx = text.find("diff --git")
+    idx = candidate.find("diff --git")
     if idx >= 0:
-        return text[idx:].strip()
+        return candidate[idx:].strip()
 
-    return text.strip()
+    # Sometimes the model returns a patch without 'diff --git' -> reject
+    raise RuntimeError("Invalid patch: missing 'diff --git' header.")
 
 
 def main() -> None:
@@ -177,15 +179,14 @@ AVAILABLE FILES (choose from):
         context_chunks.append(f"--- file: {p.as_posix()}\n{txt}")
 
     system_diff = """\
-You will output a single unified diff that can be applied with `git apply`.
-Project context: Vite + React + TypeScript, using ESLint + Prettier.
-
-Hard rules:
-- Output ONLY the diff (or inside a single ```diff fence```).
-- Do NOT change lockfiles (package-lock.json / yarn.lock / pnpm-lock.yaml).
-- Do NOT modify .github/workflows.
+Output a SINGLE git-style unified diff that is directly applyable via `git apply`.
+Hard requirements:
+- The output MUST start with a line like: diff --git a/<path> b/<path>
+- Do NOT wrap the diff in markdown fences (no ```diff).
+- Include complete file headers for new files: diff --git ... + new file mode 100644 + index ... + --- /dev/null + +++ b/<path>
+- Use repo-root relative paths with forward slashes (/).
+- Do NOT change lockfiles and do NOT modify .github/workflows.
 - Keep changes minimal and directly related to the TASK.
-- If you add new files, they must be under src/ and included in the diff.
 """.strip()
 
     user_diff = f"""\
