@@ -11,7 +11,7 @@ import requests
 
 API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 TASK = os.environ.get("TASK", "").strip()
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-pro")
 
 if not API_KEY:
     raise SystemExit("GEMINI_API_KEY is missing")
