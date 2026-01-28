@@ -187,6 +187,7 @@ Hard requirements:
 - Use repo-root relative paths with forward slashes (/).
 - Do NOT change lockfiles and do NOT modify .github/workflows.
 - Keep changes minimal and directly related to the TASK.
+- Do NOT add new files. Only modify existing files.
 """.strip()
 
     user_diff = f"""\
