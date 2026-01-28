@@ -53,7 +53,7 @@ export const GlobalStyles = () => (
         font-family: var(--rounded-label-font);
         font-weight: 500;
         letter-spacing: 0.2px;
-        font-size: clamp(12px, 0.35vw + 11px, 14px);
+        font-size: clamp(14px, 0.5vw + 12px, 16px);
       }
 
       /* 日付関連（カレンダー/ポップオーバー）のフォントも統一 */
