@@ -75,12 +75,21 @@ jobs:
       - name: Commit changes (if any)
         run: |
           set -euo pipefail
-          if git diff --quiet && git diff --cached --quiet; then
+
+          # いったん安全のためクリーニング
+          rm -f .github/workflows/alexa-ai-pr.yml || true
+
+          # add から除外（workflow と artifacts をコミットしない）
+          git add -A
+          git reset -- .github/workflows || true
+          git reset -- artifacts || true
+
+          if git diff --cached --quiet; then
             echo "DID_COMMIT=false" >> $GITHUB_ENV
-            echo "No changes detected; exiting."
+            echo "No staged changes; exiting."
             exit 0
           fi
-          git add -A
+
           git commit -m "AI: $TASK"
           echo "DID_COMMIT=true" >> $GITHUB_ENV
 
