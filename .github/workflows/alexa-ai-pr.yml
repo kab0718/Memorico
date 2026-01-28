@@ -58,6 +58,11 @@ jobs:
           echo "BRANCH=$BR" >> $GITHUB_ENV
           git checkout -b "$BR"
 
+      - name: Setup git identity
+        run: |
+          git config user.name "alexa-ai-bot"
+          git config user.email "alexa-ai-bot@users.noreply.github.com"
+
       - name: Generate patch with Gemini and
         run: python scripts/gemini_make_patch.py
 
