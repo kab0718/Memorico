@@ -78,22 +78,46 @@ def read_file_for_context(path: str, limit: int = 16000) -> str:
 
 
 def extract_json(text: str) -> Dict[str, Any]:
-    # Prefer fenced json
-    m = re.search(r"```json\s*([\s\S]*?)```", text)
-    candidate = m.group(1).strip() if m else text.strip()
+    """
+    Extract the first valid JSON object from a possibly noisy LLM output.
+    Accepts:
+		- ```json ... ```
+		- ``` ... ``` (no language)
+		- Plain text with embedded {...}
+    """
+    # 1) Prefer fenced blocks (json / JSON / no-lang)
+    fences = re.findall(r"```(?:json|JSON)?\s*([\s\S]*?)```", text)
+    candidates = [c.strip() for c in fences if c.strip()]
 
-    # Try parse raw
-    try:
-        return json.loads(candidate)
-    except Exception:
-        pass
+    # 2) Also try raw text as candidate
+    candidates.append(text.strip())
 
-    # Try find first {...} block
-    start = candidate.find("{")
-    end = candidate.rfind("}")
-    if start >= 0 and end > start:
-        snippet = candidate[start : end + 1]
-        return json.loads(snippet)
+    # Try strict parse on candidates first
+    for cand in candidates:
+        try:
+            return json.loads(cand)
+        except Exception:
+            pass
+
+    # 3) Fallback: scan for a parseable JSON object by brace matching
+    s = text
+    start_positions = [m.start() for m in re.finditer(r"\{", s)]
+    for start in start_positions:
+        depth = 0
+        for end in range(start, len(s)):
+            ch = s[end]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    snippet = s[start : end + 1].strip()
+                    try:
+                        obj = json.loads(snippet)
+                        if isinstance(obj, dict):
+                            return obj
+                    except Exception:
+                        break  # give up this start, try next
 
     raise RuntimeError("Could not parse JSON from Gemini output")
 
@@ -160,6 +184,7 @@ Return ONLY JSON:
 Rules:
 - Only pick from the provided file list.
 - Keep it small.
+- Return ONLY JSON. No prose. No markdown fences. No backticks.
 """.strip()
 
     user_pick = f"TASK:\n{TASK}\n\nFILES:\n" + "\n".join(all_files)
