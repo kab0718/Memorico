@@ -14,6 +14,7 @@ createRoot(el).render(
   <React.StrictMode>
     <MantineProvider
       theme={{
+        primaryColor: "blue",
         fontFamily: "var(--rounded-label-font)",
         headings: { fontFamily: "var(--rounded-label-font)", fontWeight: "700" },
       }}

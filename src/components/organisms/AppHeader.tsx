@@ -13,8 +13,8 @@ export const AppHeader = (): JSX.Element => {
 };
 
 const headerStyle = css`
-  background: #fff7e8;
-  border-bottom: 1px solid var(--mantine-color-gray-3);
+  background: #e7f5ff;
+  border-bottom: 1px solid var(--mantine-color-blue-3);
 `;
 
 const logoStyle = css`
