@@ -3,9 +3,7 @@ from __future__ import annotations
 
 import json
 import os
-import random
 import re
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -29,16 +27,6 @@ ARTIFACTS_DIR = Path("artifacts")
 ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def parse_retry_delay_seconds(err_text: str) -> float | None:
-    m = re.search(r'"retryDelay"\s*:\s*"(\d+)s"', err_text)
-    if m:
-        return float(m.group(1))
-    m = re.search(r"Please retry in ([0-9.]+)s", err_text)
-    if m:
-        return float(m.group(1))
-    return None
-
-
 def gemini_generate(system: str, user: str, max_output_tokens: int = 3000) -> str:
     body = {
         "contents": [{"role": "user", "parts": [{"text": f"{system}\n\n{user}"}]}],
@@ -48,58 +36,25 @@ def gemini_generate(system: str, user: str, max_output_tokens: int = 3000) -> st
         },
     }
 
-    retry_statuses = {429, 500, 502, 503, 504}
-    max_attempts = int(os.environ.get("GEMINI_MAX_ATTEMPTS", "2"))  # keep cheap
-    base_sleep = float(os.environ.get("GEMINI_RETRY_BASE_SLEEP", "1.0"))
+    try:
+        res = requests.post(
+            ENDPOINT,
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(body),
+            timeout=180,
+        )
 
-    last_err: Exception | None = None
+        if not res.ok:
+            raise RuntimeError(f"Gemini API error: {res.status_code} {res.text}")
 
-    for attempt in range(1, max_attempts + 1):
-        try:
-            res = requests.post(
-                ENDPOINT,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(body),
-                timeout=180,
-            )
-
-            if res.status_code in retry_statuses:
-                # Prefer server-provided retry delay if any
-                delay = parse_retry_delay_seconds(res.text)
-                if delay is None:
-                    delay = min(base_sleep * (2 ** (attempt - 1)), 20.0) + random.uniform(0, 0.5)
-
-                msg = f"Gemini API transient error: {res.status_code} {res.text}"
-                last_err = RuntimeError(msg)
-
-                if attempt == max_attempts:
-                    break
-
-                print(f"[gemini] attempt {attempt}/{max_attempts} failed: {msg}")
-                print(f"[gemini] retrying in {delay:.2f}s...")
-                time.sleep(min(delay, 30.0))
-                continue
-
-            if not res.ok:
-                raise RuntimeError(f"Gemini API error: {res.status_code} {res.text}")
-
-            data = res.json()
-            parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
-            text = "".join(p.get("text", "") for p in parts)
-            if not text.strip():
-                raise RuntimeError("Empty Gemini output")
-            return text
-
-        except (requests.RequestException, RuntimeError) as e:
-            last_err = e
-            if attempt == max_attempts:
-                break
-            delay = min(base_sleep * (2 ** (attempt - 1)), 20.0) + random.uniform(0, 0.5)
-            print(f"[gemini] attempt {attempt}/{max_attempts} failed: {e}")
-            print(f"[gemini] retrying in {delay:.2f}s...")
-            time.sleep(delay)
-
-    raise RuntimeError(f"Gemini API failed after {max_attempts} attempts: {last_err}")
+        data = res.json()
+        parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
+        text = "".join(p.get("text", "") for p in parts)
+        if not text.strip():
+            raise RuntimeError("Empty Gemini output")
+        return text
+    except (requests.RequestException, RuntimeError) as e:
+        raise RuntimeError(f"Gemini API failed: {e}") from e
 
 
 def extract_json(text: str) -> Dict[str, Any]:
