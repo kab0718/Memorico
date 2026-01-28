@@ -205,26 +205,28 @@ def build_fixed_context() -> str:
 
     src_files: List[str] = []
     src_root = Path("src")
+    max_src_files = int(os.environ.get("GEMINI_CONTEXT_MAX_FILES", "50"))
     if src_root.exists():
         for p in src_root.rglob("*"):
             if not p.is_file():
                 continue
             if p.suffix.lower() in {".ts", ".tsx", ".css", ".scss", ".json", ".md"}:
                 src_files.append(p.as_posix())
-            if len(src_files) >= 10:
+            if len(src_files) >= max_src_files:
                 break
 
     selected.extend(src_files)
 
     parts: List[str] = []
+    max_chars_per_file = int(os.environ.get("GEMINI_CONTEXT_MAX_CHARS", "24000"))
     for s in selected:
         p = Path(s)
         try:
             txt = p.read_text(encoding="utf-8", errors="replace")
         except Exception:
             continue
-        if len(txt) > 16000:
-            txt = txt[:16000] + "\n/* truncated */\n"
+        if len(txt) > max_chars_per_file:
+            txt = txt[:max_chars_per_file] + "\n/* truncated */\n"
         parts.append(f"--- file: {s}\n{txt}")
 
     return "\n\n".join(parts)
@@ -278,6 +280,13 @@ CONTEXT FILES:
         raise
 
     (ARTIFACTS_DIR / "gemini_raw.txt").write_text(gen_raw, encoding="utf-8")
+    log_len = int(os.environ.get("GEMINI_LOG_RAW_CHARS", "4000"))
+    if log_len > 0:
+        snippet = gen_raw[:log_len].rstrip()
+        print("=== gemini_raw (head) ===")
+        print(snippet)
+        if len(gen_raw) > log_len:
+            print("=== gemini_raw truncated ===")
 
     out = extract_json(gen_raw)
     files = out.get("files", [])
