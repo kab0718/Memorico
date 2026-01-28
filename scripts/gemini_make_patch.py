@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -27,7 +29,17 @@ ARTIFACTS_DIR = Path("artifacts")
 ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def gemini_generate(system: str, user: str, max_output_tokens: int = 4000) -> str:
+def parse_retry_delay_seconds(err_text: str) -> float | None:
+    m = re.search(r'"retryDelay"\s*:\s*"(\d+)s"', err_text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"Please retry in ([0-9.]+)s", err_text)
+    if m:
+        return float(m.group(1))
+    return None
+
+
+def gemini_generate(system: str, user: str, max_output_tokens: int = 3000) -> str:
     body = {
         "contents": [{"role": "user", "parts": [{"text": f"{system}\n\n{user}"}]}],
         "generationConfig": {
@@ -35,71 +47,81 @@ def gemini_generate(system: str, user: str, max_output_tokens: int = 4000) -> st
             "maxOutputTokens": max_output_tokens,
         },
     }
-    res = requests.post(
-        ENDPOINT,
-        headers={"Content-Type": "application/json"},
-        data=json.dumps(body),
-        timeout=180,
-    )
-    if not res.ok:
-        raise RuntimeError(f"Gemini API error: {res.status_code} {res.text}")
-    data = res.json()
-    parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
-    text = "".join(p.get("text", "") for p in parts)
-    if not text.strip():
-        raise RuntimeError("Empty Gemini output")
-    return text
 
+    retry_statuses = {429, 500, 502, 503, 504}
+    max_attempts = int(os.environ.get("GEMINI_MAX_ATTEMPTS", "2"))  # keep cheap
+    base_sleep = float(os.environ.get("GEMINI_RETRY_BASE_SLEEP", "1.0"))
 
-def list_repo_files(limit: int = 1200) -> List[str]:
-    """List repo files to help the model choose what to edit."""
-    skip_dirs = {".git", "node_modules", "dist", "build", ".next", ".turbo", ".cache"}
-    out: List[str] = []
-    for p in Path(".").rglob("*"):
-        if p.is_dir():
-            continue
-        if any(part in skip_dirs for part in p.parts):
-            continue
-        # keep list manageable
-        out.append(p.as_posix())
-        if len(out) >= limit:
-            break
-    return out
+    last_err: Exception | None = None
 
+    for attempt in range(1, max_attempts + 1):
+        try:
+            res = requests.post(
+                ENDPOINT,
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(body),
+                timeout=180,
+            )
 
-def read_file_for_context(path: str, limit: int = 16000) -> str:
-    p = Path(path)
-    if not p.exists() or p.is_dir():
-        return ""
-    txt = p.read_text(encoding="utf-8", errors="replace")
-    if len(txt) > limit:
-        return txt[:limit] + "\n/* truncated */\n"
-    return txt
+            if res.status_code in retry_statuses:
+                # Prefer server-provided retry delay if any
+                delay = parse_retry_delay_seconds(res.text)
+                if delay is None:
+                    delay = min(base_sleep * (2 ** (attempt - 1)), 20.0) + random.uniform(0, 0.5)
+
+                msg = f"Gemini API transient error: {res.status_code} {res.text}"
+                last_err = RuntimeError(msg)
+
+                if attempt == max_attempts:
+                    break
+
+                print(f"[gemini] attempt {attempt}/{max_attempts} failed: {msg}")
+                print(f"[gemini] retrying in {delay:.2f}s...")
+                time.sleep(min(delay, 30.0))
+                continue
+
+            if not res.ok:
+                raise RuntimeError(f"Gemini API error: {res.status_code} {res.text}")
+
+            data = res.json()
+            parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
+            text = "".join(p.get("text", "") for p in parts)
+            if not text.strip():
+                raise RuntimeError("Empty Gemini output")
+            return text
+
+        except (requests.RequestException, RuntimeError) as e:
+            last_err = e
+            if attempt == max_attempts:
+                break
+            delay = min(base_sleep * (2 ** (attempt - 1)), 20.0) + random.uniform(0, 0.5)
+            print(f"[gemini] attempt {attempt}/{max_attempts} failed: {e}")
+            print(f"[gemini] retrying in {delay:.2f}s...")
+            time.sleep(delay)
+
+    raise RuntimeError(f"Gemini API failed after {max_attempts} attempts: {last_err}")
 
 
 def extract_json(text: str) -> Dict[str, Any]:
     """
     Extract the first valid JSON object from a possibly noisy LLM output.
     Accepts:
-		- ```json ... ```
-		- ``` ... ``` (no language)
-		- Plain text with embedded {...}
+        - ```json ... ```
+        - ``` ... ``` (no language)
+        - Plain text with embedded {...}
     """
-    # 1) Prefer fenced blocks (json / JSON / no-lang)
     fences = re.findall(r"```(?:json|JSON)?\s*([\s\S]*?)```", text)
     candidates = [c.strip() for c in fences if c.strip()]
-
-    # 2) Also try raw text as candidate
     candidates.append(text.strip())
 
-    # Try strict parse on candidates first
     for cand in candidates:
         try:
-            return json.loads(cand)
+            obj = json.loads(cand)
+            if isinstance(obj, dict):
+                return obj
         except Exception:
             pass
 
-    # 3) Fallback: scan for a parseable JSON object by brace matching
     s = text
     start_positions = [m.start() for m in re.finditer(r"\{", s)]
     for start in start_positions:
@@ -117,20 +139,16 @@ def extract_json(text: str) -> Dict[str, Any]:
                         if isinstance(obj, dict):
                             return obj
                     except Exception:
-                        break  # give up this start, try next
+                        break
 
     raise RuntimeError("Could not parse JSON from Gemini output")
 
 
 def sanitize_path(path: str) -> str:
-    # prevent directory traversal; keep it repo-relative
     path = path.strip().lstrip("/")
-
-    # normalize and reject traversal
     norm = Path(path)
     if ".." in norm.parts:
         raise RuntimeError(f"Path traversal is not allowed: {path}")
-
     return norm.as_posix()
 
 
@@ -138,7 +156,7 @@ def apply_files(files: List[Dict[str, Any]]) -> Tuple[int, List[str]]:
     changed: List[str] = []
     count = 0
 
-    # very light guardrails to avoid ridiculous output
+    # Light guardrails to avoid ridiculous output
     if len(files) > 25:
         raise RuntimeError(f"Too many files in output: {len(files)} (max 25)")
 
@@ -152,14 +170,14 @@ def apply_files(files: List[Dict[str, Any]]) -> Tuple[int, List[str]]:
 
         path = sanitize_path(path)
 
-        # avoid touching .git and workflow stuff even in "free" mode
+        # Avoid touching git internals / workflows even in "free" mode
         if path.startswith(".git/") or path.startswith(".github/workflows/"):
             continue
 
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
 
-        # size cap to avoid accidental mega writes
+        # Size cap to avoid accidental mega writes
         if len(content) > 200_000:
             raise RuntimeError(f"File too large: {path} ({len(content)} bytes)")
 
@@ -174,52 +192,57 @@ def apply_files(files: List[Dict[str, Any]]) -> Tuple[int, List[str]]:
     return count, changed
 
 
-def main() -> None:
-    all_files = list_repo_files()
-    # Ask model to choose up to 8 files to read
-    system_pick = """\
-Pick up to 8 relevant files to edit for the given TASK.
-Return ONLY JSON:
-{"files":["path1","path2",...], "notes":"short"}
-Rules:
-- Only pick from the provided file list.
-- Keep it small.
-- Return ONLY JSON. No prose. No markdown fences. No backticks.
-""".strip()
+def build_fixed_context() -> str:
+    """
+    Pick-free context builder:
+    - Always include package.json and README.md if present
+    - Include first N source files under src/ to give the model some grounding
+    """
+    selected: List[str] = []
+    for f in ["package.json", "README.md", "tsconfig.json", "vite.config.ts"]:
+        if Path(f).exists():
+            selected.append(f)
 
-    user_pick = f"TASK:\n{TASK}\n\nFILES:\n" + "\n".join(all_files)
-    pick_raw = gemini_generate(system_pick, user_pick, max_output_tokens=800)
+    src_files: List[str] = []
+    src_root = Path("src")
+    if src_root.exists():
+        for p in src_root.rglob("*"):
+            if not p.is_file():
+                continue
+            if p.suffix.lower() in {".ts", ".tsx", ".css", ".scss", ".json", ".md"}:
+                src_files.append(p.as_posix())
+            if len(src_files) >= 10:
+                break
 
-    try:
-        pick_json = extract_json(pick_raw)
-    except Exception:
-        # pickは失敗しても良い。とりあえず動かす。
-        pick_json = {"files": ["README.md", "package.json"], "notes": "fallback: pick parse failed"}
-    
-    selected = pick_json.get("files", [])
-    if not isinstance(selected, list) or not selected:
-        selected = ["README.md", "package.json"]
+    selected.extend(src_files)
 
-    selected = [s for s in selected[:8] if isinstance(s, str)]
-    context_parts: List[str] = []
+    parts: List[str] = []
     for s in selected:
-        s2 = s.strip()
-        if not s2:
+        p = Path(s)
+        try:
+            txt = p.read_text(encoding="utf-8", errors="replace")
+        except Exception:
             continue
-        content = read_file_for_context(s2)
-        if content:
-            context_parts.append(f"--- file: {s2}\n{content}")
+        if len(txt) > 16000:
+            txt = txt[:16000] + "\n/* truncated */\n"
+        parts.append(f"--- file: {s}\n{txt}")
 
-    # Now generate "files to write" as JSON
+    return "\n\n".join(parts)
+
+
+def main() -> None:
+    # Build a small fixed context (no pick step)
+    context = build_fixed_context()
+
     system_gen = """\
 You are editing an existing codebase.
 Output ONLY JSON in this schema:
 {
-  "files": [
-    {"path": "relative/path/to/file", "content": "complete new file content"},
-    ...
-  ],
-  "summary": "what you changed"
+    "files": [
+        {"path": "relative/path/to/file", "content": "complete new file content"},
+        ...
+    ],
+    "summary": "what you changed"
 }
 
 Rules:
@@ -227,6 +250,7 @@ Rules:
 - Use forward slashes (/) in paths.
 - Keep changes focused on TASK.
 - Do not include markdown outside JSON.
+- files should contain at least ONE entry; if you think no changes are needed, still return one relevant file with its current content.
 """.strip()
 
     user_gen = f"""\
@@ -234,23 +258,44 @@ TASK:
 {TASK}
 
 CONTEXT FILES:
-{chr(10).join(context_parts)}
+{context}
 """.strip()
 
-    gen_raw = gemini_generate(system_gen, user_gen, max_output_tokens=4000)
+    try:
+        gen_raw = gemini_generate(system_gen, user_gen, max_output_tokens=3000)
+    except RuntimeError as e:
+        # If quota/rate-limited, treat as no-op to keep the job green (optional)
+        msg = str(e)
+        if "RESOURCE_EXHAUSTED" in msg or "429" in msg:
+            print("Gemini quota/rate limit hit; treating as no-op.")
+            (ARTIFACTS_DIR / "changed_files.json").write_text(
+                json.dumps({"count": 0, "changed": [], "summary": "", "note": "rate-limited"}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            return
+        raise
 
-    # Save raw output for debugging
     (ARTIFACTS_DIR / "gemini_raw.txt").write_text(gen_raw, encoding="utf-8")
 
     out = extract_json(gen_raw)
     files = out.get("files", [])
     if not isinstance(files, list) or not files:
-        raise RuntimeError("Gemini returned no files to write")
+        # No-op rather than failing hard (keeps PoC resilient)
+        (ARTIFACTS_DIR / "changed_files.json").write_text(
+            json.dumps({"count": 0, "changed": [], "summary": out.get("summary", ""), "note": "no files returned"}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        print("No files returned by Gemini; treating as no-op.")
+        return
 
     count, changed = apply_files(files)
 
     (ARTIFACTS_DIR / "changed_files.json").write_text(
-        json.dumps({"count": count, "changed": changed, "summary": out.get("summary", "")}, ensure_ascii=False, indent=2),
+        json.dumps(
+            {"count": count, "changed": changed, "summary": out.get("summary", "")},
+            ensure_ascii=False,
+            indent=2,
+        ),
         encoding="utf-8",
     )
 
