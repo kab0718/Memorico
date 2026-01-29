@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { MediaExif } from "../../types/mediaExif";
 import { formatDateTime } from "../../utils/exif";
 import { fetchLandmarkData } from "../../api/landmark";
+import { exifDetailFluid } from "../../styles/fluidTypography";
 
 interface Props {
   mediaExif: MediaExif | undefined;
@@ -121,7 +122,7 @@ export const ExifDetail = ({
 };
 
 const dateStyle = css`
-  font-size: clamp(10px, 0.45vw + 10px, 13px);
+  font-size: ${exifDetailFluid.shootingDate};
   line-height: 1.6;
 `;
 
@@ -131,9 +132,9 @@ const shootingMessageStyle = css`
 
 const placeInputStyle = css`
   .mantine-InputWrapper-label {
-    font-size: clamp(10px, 0.35vw + 10px, 13px);
+    font-size: ${exifDetailFluid.labelOverride};
   }
   .mantine-Input-input {
-    font-size: clamp(10px, 0.45vw + 10px, 14px);
+    font-size: ${exifDetailFluid.inputOverride};
   }
 `;
