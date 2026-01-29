@@ -16,6 +16,21 @@ createRoot(el).render(
       theme={{
         fontFamily: "var(--rounded-label-font)",
         headings: { fontFamily: "var(--rounded-label-font)", fontWeight: "700" },
+        primaryColor: "blue",
+        colors: {
+          blue: [
+            "#e6f2ff",
+            "#cce0ff",
+            "#99c2ff",
+            "#66a3ff",
+            "#3385ff",
+            "#0066ff",
+            "#0052cc",
+            "#003d99",
+            "#002966",
+            "#001433",
+          ],
+        },
       }}
     >
       <GlobalStyles />
