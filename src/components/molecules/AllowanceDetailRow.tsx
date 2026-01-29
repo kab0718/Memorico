@@ -26,7 +26,7 @@ export const AllowanceDetailRow = ({
     <Group align="flex-end" wrap="wrap">
       <TextInput
         label="商品名"
-        placeholder="例: ジュース"
+        placeholder="例: i定食"
         css={nameInputStyle}
         value={row.name}
         disabled={disabled}
