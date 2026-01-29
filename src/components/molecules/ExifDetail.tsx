@@ -121,7 +121,7 @@ export const ExifDetail = ({
 };
 
 const dateStyle = css`
-  font-size: clamp(10px, 0.45vw + 10px, 13px);
+  font-size: clamp(13px, 0.55vw + 12px, 16px);
   line-height: 1.6;
 `;
 
@@ -131,9 +131,9 @@ const shootingMessageStyle = css`
 
 const placeInputStyle = css`
   .mantine-InputWrapper-label {
-    font-size: clamp(10px, 0.35vw + 10px, 13px);
+    font-size: clamp(13px, 0.45vw + 12px, 16px);
   }
   .mantine-Input-input {
-    font-size: clamp(10px, 0.45vw + 10px, 14px);
+    font-size: clamp(14px, 0.55vw + 12px, 17px);
   }
 `;
