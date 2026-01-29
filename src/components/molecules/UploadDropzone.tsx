@@ -45,9 +45,11 @@ export const UploadDropzone = ({
       multiple
       css={dropzoneStyle}
     >
-      <Group justify="center" mih={140}>
-        <Stack gap={4} align="center">
-          <Text fw={600}>ここに画像をドラッグ&ドロップ</Text>
+      <Group justify="center" mih={160}>
+        <Stack gap={6} align="center">
+          <Text fw={600} size="lg">
+            ここに画像をドラッグ&ドロップ
+          </Text>
           <Text c="dimmed" size="sm">
             最大 {Math.round(maxSize / (1024 * 1024))}MB / 画像
           </Text>
@@ -58,5 +60,12 @@ export const UploadDropzone = ({
 };
 
 const dropzoneStyle = css`
-  border: none;
+  border: 2px dashed var(--mantine-color-gray-4);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--mantine-color-blue-5);
+    background-color: var(--mantine-color-blue-0);
+  }
 `;

@@ -21,7 +21,7 @@ export const StepCard = ({ label, children }: Props) => {
 };
 
 const titleStyle = css`
-  padding: 16px 24px;
+  padding: 20px 28px;
   /* WCAG AA: 4.5:1 以上を満たす配色に調整 */
   background-color: var(--mantine-color-yellow-2);
   color: var(--mantine-color-dark-9);
@@ -29,5 +29,5 @@ const titleStyle = css`
 
 const contentsStyle = css`
   /* ヘッダー直下にゆとりを持たせる */
-  margin: 32px 24px 24px 24px;
+  margin: 28px 28px 24px 28px;
 `;

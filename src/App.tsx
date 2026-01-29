@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Title, Button, Group, Center, Loader, Stack, Paper, Text } from "@mantine/core";
+import { Title, Button, Group, Center, Loader, Stack, Paper, Text, Container } from "@mantine/core";
 import { ImageUploadGallery } from "./components/organisms/ImageUploadGallery";
 import { TripForm } from "./components/organisms/TripForm";
 import { GenerateResult } from "./components/organisms/GenerateResult";
@@ -65,78 +65,80 @@ export const App = () => {
   return (
     <>
       <AppHeader />
-      <Paper p="lg" radius="md">
-        {active === 0 && (
-          <>
-            <StepCard label="旅の思い出をアップロード">
-              <ImageUploadGallery
-                value={images}
-                onChange={setImages}
-                onLandmarkLoadingChange={setIsLandmarkLoading}
-              />
-            </StepCard>
-            <Group justify="flex-end" mt="xl">
-              <NextButton onClick={next} disabled={images.length === 0 || isLandmarkLoading} />
-            </Group>
-          </>
-        )}
+      <Container size="xl" px="md" py="xl">
+        <Paper p="xl" radius="md" shadow="sm">
+          {active === 0 && (
+            <>
+              <StepCard label="旅の思い出をアップロード">
+                <ImageUploadGallery
+                  value={images}
+                  onChange={setImages}
+                  onLandmarkLoadingChange={setIsLandmarkLoading}
+                />
+              </StepCard>
+              <Group justify="flex-end" mt="xl">
+                <NextButton onClick={next} disabled={images.length === 0 || isLandmarkLoading} />
+              </Group>
+            </>
+          )}
 
-        {active === 1 && (
-          <>
-            <StepCard label="旅のしおりに載せる情報を入力">
-              <TripForm form={form} onSubmit={handleSubmit} />
-            </StepCard>
-            <Group justify="space-between" mt="xl">
-              <PrevButton onClick={back} />
-              <NextButton onClick={next} disabled={!form.isValid()} />
-            </Group>
-          </>
-        )}
-        {active === 2 && (
-          <>
-            <StepCard label="お小遣い帳を入力">
-              <AllowanceForm
-                value={form.values.allowance}
-                onChange={(v) => form.setFieldValue("allowance", v)}
-              />
-            </StepCard>
-            <Group justify="space-between" mt="xl">
-              <PrevButton onClick={back} />
-              <Button color="blue" onClick={() => handleSubmit(form.values)}>
-                作成
-              </Button>
-            </Group>
-          </>
-        )}
-        {active === 3 && (
-          <Center h="100vh">
-            <Stack align="center" gap="sm">
-              <Loader size="lg" />
-              <Title order={4}>しおりを生成しています…</Title>
-              <Text size="sm" c="dimmed">
-                3分ほど時間がかかります
-              </Text>
-            </Stack>
-          </Center>
-        )}
-        {active === 4 && (
-          <GenerateResult
-            pdfBlob={pdfBlob!}
-            onRestart={() => {
-              setActive(0);
-              setImages([]);
-              form.reset();
-            }}
-          />
-        )}
-      </Paper>
+          {active === 1 && (
+            <>
+              <StepCard label="旅のしおりに載せる情報を入力">
+                <TripForm form={form} onSubmit={handleSubmit} />
+              </StepCard>
+              <Group justify="space-between" mt="xl">
+                <PrevButton onClick={back} />
+                <NextButton onClick={next} disabled={!form.isValid()} />
+              </Group>
+            </>
+          )}
+          {active === 2 && (
+            <>
+              <StepCard label="お小遣い帳を入力">
+                <AllowanceForm
+                  value={form.values.allowance}
+                  onChange={(v) => form.setFieldValue("allowance", v)}
+                />
+              </StepCard>
+              <Group justify="space-between" mt="xl">
+                <PrevButton onClick={back} />
+                <Button color="blue" size="md" onClick={() => handleSubmit(form.values)}>
+                  作成
+                </Button>
+              </Group>
+            </>
+          )}
+          {active === 3 && (
+            <Center h="100vh">
+              <Stack align="center" gap="sm">
+                <Loader size="lg" />
+                <Title order={4}>しおりを生成しています…</Title>
+                <Text size="sm" c="dimmed">
+                  3分ほど時間がかかります
+                </Text>
+              </Stack>
+            </Center>
+          )}
+          {active === 4 && (
+            <GenerateResult
+              pdfBlob={pdfBlob!}
+              onRestart={() => {
+                setActive(0);
+                setImages([]);
+                form.reset();
+              }}
+            />
+          )}
+        </Paper>
+      </Container>
     </>
   );
 };
 
 const NextButton = (props: { onClick: () => void; disabled: boolean }) => {
   return (
-    <Button onClick={props.onClick} disabled={props.disabled}>
+    <Button onClick={props.onClick} disabled={props.disabled} size="md">
       次へ
     </Button>
   );
@@ -144,7 +146,7 @@ const NextButton = (props: { onClick: () => void; disabled: boolean }) => {
 
 const PrevButton = (props: { onClick: () => void }) => {
   return (
-    <Button variant="light" onClick={props.onClick}>
+    <Button variant="light" onClick={props.onClick} size="md">
       戻る
     </Button>
   );

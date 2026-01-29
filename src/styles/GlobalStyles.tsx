@@ -23,9 +23,15 @@ export const GlobalStyles = () => (
 
       body {
         line-height: 1.65;
+        background-color: #f8f9fa;
       }
 
       /* ボタンのラベルはやや強調 */
+      .mantine-Button-root {
+        font-weight: 600;
+        min-height: 42px;
+      }
+
       .mantine-Button-label {
         font-family: var(--rounded-label-font);
         font-weight: 700;
