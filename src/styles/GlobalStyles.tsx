@@ -23,6 +23,7 @@ export const GlobalStyles = () => (
 
       body {
         line-height: 1.65;
+        background-color: #f8f9fa;
       }
 
       /* ボタンのラベルはやや強調 */

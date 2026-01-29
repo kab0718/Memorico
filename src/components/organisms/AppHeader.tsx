@@ -15,6 +15,7 @@ export const AppHeader = (): JSX.Element => {
 const headerStyle = css`
   background: #fff7e8;
   border-bottom: 1px solid var(--mantine-color-gray-3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 `;
 
 const logoStyle = css`

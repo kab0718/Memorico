@@ -65,7 +65,7 @@ export const App = () => {
   return (
     <>
       <AppHeader />
-      <Paper p="lg" radius="md">
+      <Paper p="xl" radius="md" shadow="sm" maw={1200} mx="auto" my="xl">
         {active === 0 && (
           <>
             <StepCard label="旅の思い出をアップロード">
@@ -102,7 +102,7 @@ export const App = () => {
             </StepCard>
             <Group justify="space-between" mt="xl">
               <PrevButton onClick={back} />
-              <Button color="blue" onClick={() => handleSubmit(form.values)}>
+              <Button size="md" color="blue" onClick={() => handleSubmit(form.values)}>
                 作成
               </Button>
             </Group>
@@ -136,7 +136,7 @@ export const App = () => {
 
 const NextButton = (props: { onClick: () => void; disabled: boolean }) => {
   return (
-    <Button onClick={props.onClick} disabled={props.disabled}>
+    <Button size="md" onClick={props.onClick} disabled={props.disabled}>
       次へ
     </Button>
   );
@@ -144,7 +144,7 @@ const NextButton = (props: { onClick: () => void; disabled: boolean }) => {
 
 const PrevButton = (props: { onClick: () => void }) => {
   return (
-    <Button variant="light" onClick={props.onClick}>
+    <Button size="md" variant="light" onClick={props.onClick}>
       戻る
     </Button>
   );
