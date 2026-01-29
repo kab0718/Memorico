@@ -1,0 +1,22 @@
+name: Assign Copilot to Issue
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  assign:
+    if: github.event.label.name == 'copilot-agent'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Assign Copilot to issue
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_ASSIGN_PAT }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-assignee "@copilot"
