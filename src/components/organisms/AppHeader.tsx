@@ -1,5 +1,6 @@
 import { Group } from "@mantine/core";
 import { css } from "@emotion/react";
+import { fluidScale } from "../../styles/fluidTypography";
 
 export const AppHeader = (): JSX.Element => {
   const title = "Memorico";
@@ -18,7 +19,7 @@ const headerStyle = css`
 `;
 
 const logoStyle = css`
-  height: clamp(40px, 4vw, 68px);
+  height: ${fluidScale.logoHeight};
   width: auto;
   display: block;
 `;
