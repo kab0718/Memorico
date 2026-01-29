@@ -52,7 +52,7 @@ export const AllowanceDetailsModal = ({
         if (!res.items || res.items.length == 0) {
           notifications.show({
             color: "yellow",
-            title: "レシート読み込み結果",
+            title: "レシート取り込み結果",
             message: "明細が見つかりません",
           });
           return;
@@ -61,7 +61,7 @@ export const AllowanceDetailsModal = ({
         onOcrPrefill(res);
       })
       .catch((err) => {
-        notifications.show({ color: "red", title: "レシート読み込みエラー", message: `${err}` });
+        notifications.show({ color: "red", title: "レシート取り込みエラー", message: `${err}` });
       })
       .finally(() => {
         setStatus("idle");

@@ -33,7 +33,7 @@ export const ReceiptImportButton = ({ onSelect, disabled = false }: Props) => {
   return (
     <>
       <Button variant="light" onClick={handleClick} disabled={disabled}>
-        レシート読み込み
+        レシート取り込み
       </Button>
       <input
         ref={inputRef}
